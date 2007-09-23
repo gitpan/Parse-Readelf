@@ -1,0 +1,4 @@
+Revision history for Perl extension Parse::Readelf.
+
+0.01	(21.01.2007-10.09.2008)
+	first version supporting printing of structure layout
