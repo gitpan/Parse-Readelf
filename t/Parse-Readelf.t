@@ -11,6 +11,7 @@
 use Test::More tests => 96;
 
 use File::Spec;
+use File::Temp 'tempfile';
 
 require_ok 'Parse::Readelf';
 
@@ -42,24 +43,26 @@ sub check_stdout($&@)
 
     # redirect stdout to temporary IO-channel:
     open my $oldout, '>&STDOUT'  or  die "Can't dup STDOUT ($test): $!\n";
-    open TMP, '+>', undef  or  die "Can't open temporary ($test): $!\n";
-    open STDOUT, '>&TMP'  or  die "Can't dup temporary ($test): $!\n";
+    my $tmp = tempfile()  or  die "Can't open temporary ($test): $!\n";
+    open STDOUT, '>&'.fileno($tmp)
+	or  die "Can't dup temporary ($test): $!\n";
 
     # call subroutine:
     &$rSub();
 
     # restore stdout:
-    open STDOUT, '>&', $oldout  or  die "Can't restore STDOUT ($test): $!\n";
+    open STDOUT, '>&'.fileno($oldout)
+	or  die "Can't restore STDOUT ($test): $!\n";
 
-    seek TMP, 0, 0  or  die "Can't rewind temporary ($test): $!\n";
+    seek $tmp, 0, 0  or  die "Can't rewind temporary ($test): $!\n";
     my $line = 0;
-    while (<TMP>)
+    while (<$tmp>)
     {
 	chomp;
 	like($_, $_[$line], $test.' - '.$line);
 	$line++;
     }
-    close TMP  or  die "Can't close temporary ($test): $!\n";
+    close $tmp  or  die "Can't close temporary ($test): $!\n";
     is($line, @_, $test.' - all done');
 }
 
@@ -158,8 +161,6 @@ check_stdout('^l_',
 	     qr'^OFFSE\s+STRUCTURE\s+TYPE \(SIZE\)\s+$',
 	     (qr'^00') x 4,
 	     qr'^08',
-	     (qr'^00') x 3,
-	     qr'^08',
 	     (qr'^[1-3][024]\s') x 4,
 	     (qr'^32\.\d{2}\s') x 3,
 	     qr'^34',
@@ -168,12 +169,14 @@ check_stdout('^l_',
 	     qr'^38',
 	     qr'^40',
 	     (qr'^00') x 3,
+	     qr'^08',
+	     (qr'^00') x 3,
+	     qr'^08',
+	     (qr'^00') x 3,
 	     qr'^02',
 	     (qr'^00') x 3,
 	     qr'^08',
-	     qr'^16',
-	     (qr'^00') x 3,
-	     qr'^08'
+	     qr'^16'
 	    );
 
 #########################################################################

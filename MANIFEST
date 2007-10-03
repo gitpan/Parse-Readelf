@@ -11,6 +11,8 @@ lib/Parse/Readelf/Debug/Line.pm
 t/Parse-Readelf-Debug-Info.t
 t/Parse-Readelf-Debug-Line.t
 t/Parse-Readelf.t
+t/pod-coverage.t
+t/pod.t
 t/data/broken_info-1.lst
 t/data/broken_info-2.lst
 t/data/debug_info.lst

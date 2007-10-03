@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Parse::Readelf::Debug::Line;
 
@@ -741,7 +741,8 @@ sub item_ids($$)
     If a name is unique, the method returns an array with exactly one
     element, if a name does not exist it returns an empty array and
     otherwise an array containing the IDs of all matching itmes is
-    returned.
+    returned.  The IDs are sorted alphabetically according to their
+    names.
 
 =cut
 
@@ -765,9 +766,12 @@ sub item_ids_matching($$;$)
 		      =~ m/$re_name/));
 	next if defined $_->{type_tag}  and  $_->{type_tag} !~ m/$re_type_tag/;
 	next if not defined $_->{type_tag}  and  $re_type_tag ne '';
-	push @ids, $_->{id};
+	push @ids, [ $_->{id}, ( defined $_->{name} ? $_->{name} : '' ) ];
     }
-    return @ids;
+    return
+	map { $_->[0] }
+	    sort { $a->[1] cmp $b->[1] }
+		@ids;
 }
 
 #########################################################################
