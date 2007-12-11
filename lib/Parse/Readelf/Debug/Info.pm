@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Parse::Readelf::Debug::Line;
 
@@ -403,6 +403,7 @@ our @ignored_tags =
      undef,
      [
       qw(
+	DW_TAG_inlined_subroutine
 	DW_TAG_imported_declaration
 	DW_TAG_imported_module
 	DW_TAG_inheritance
