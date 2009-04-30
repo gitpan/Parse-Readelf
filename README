@@ -1,4 +1,4 @@
-Parse-Readelf version 0.03
+Parse-Readelf version 0.04
 ==========================
 
 Parse::Readelf is a module to parse the output of readelf from the GNU
@@ -9,12 +9,19 @@ information is understood.
 
 INSTALLATION
 
-To install this module type the following:
+To build, test and install this module, run the following commands:
 
-   perl Makefile.PL
-   make
-   make test
-   make install
+    perl Build.PL
+    perl Build
+    perl Build test
+    perl Build install
+
+If you prefer the traditional way of installation, use the following:
+
+    perl Makefile.PL
+    make
+    make test
+    make install
 
 DEPENDENCIES
 
@@ -33,11 +40,11 @@ Other than that the example script "run_examples.pl" needs a shell
 supporting I/O redirection.  If you don't have one, you probabely have
 to try the examples by hand.
 
-This module requires these other modules and libraries:
+This module requires these other standard modules and libraries:
 
-  Carp
-  File::Spec
-  Test::More
+    Carp
+    File::Spec
+    Test::More
 
 BUGS
 
@@ -48,7 +55,7 @@ Feedback, additional debugger outputs or patches are very much appreciated.
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2007 by Thomas Dorner
+Copyright (C) 2007-2009 by Thomas Dorner
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.6.1 or,

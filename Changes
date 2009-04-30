@@ -1,5 +1,9 @@
 Revision history for Perl extension Parse::Readelf.
 
+0.04	(05.04.2008-30.04.2009)
+	hopefully fixed tests for Windows
+	added Build.PL
+
 0.03	(03.11.2007-10.12.2007)
 	rebuild with newer MakeMaker, added missing ignored TAG
 

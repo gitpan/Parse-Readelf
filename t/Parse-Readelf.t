@@ -104,11 +104,11 @@ check_stdout('l_object2a',
 check_stdout
     ('l_object2a + loc',
      sub { $readelf_data->print_structure_layout('l_object2a', 1); },
-     qr'^O\s+STRUCTURE\s+TYPE \(SIZE\)\s+SOURCE LOCATION$',
-     qr'^0\s+l_object2a\s+Structure2 \(16\)\s+StructureLayoutTest\.cpp:\d+$',
-     qr'^0\s+Structure2\s+\(16\)\s+StructureLayoutTest\.cpp:\d+$',
-     qr'^0\s+m_00_char\s+char \(1\)\s+StructureLayoutTest\.cpp:\d+$',
-     qr'^8\s+m_01_long_long\s+long long int \(8\)\s+StructureLayoutTest\.cpp:\d+$'
+     qr'^O\s+STRUCTURE\s+TYPE \(SIZE\)\s+SOURCE LOCATION\s*$',
+     qr'^0\s+l_object2a\s+Structure2 \(16\)\s+StructureLayoutTest\.cpp:\d+\s*$',
+     qr'^0\s+Structure2\s+\(16\)\s+StructureLayoutTest\.cpp:\d+\s*$',
+     qr'^0\s+m_00_char\s+char \(1\)\s+StructureLayoutTest\.cpp:\d+\s*$',
+     qr'^8\s+m_01_long_long\s+long long int \(8\)\s+StructureLayoutTest\.cpp:\d+\s*$'
     );
 
 check_stdout('l_object3',

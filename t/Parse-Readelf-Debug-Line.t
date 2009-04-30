@@ -149,7 +149,7 @@ eval {
     my $x = new Parse::Readelf::Debug::Line($filepath);
 };
 like($@,
-     qr|^Parse::Readelf::Debug::Line can't find .* $re_msg_tail|,
+     qr|^Parse::Readelf::Debug::Line can't find .* $re_msg_tail|, #'
      'bad file name fails');
 $stderr = '';
 $SIG{__WARN__} = sub { $stderr .= join('', @_) };
@@ -160,7 +160,7 @@ eval {
 };
 delete $SIG{__WARN__};
 like($@,
-     qr|^can't parse .* with ".*" in Parse::Readelf::Debug::Line: .* $re_msg_tail|,
+     qr!^can't parse .* with ".*" in Parse::Readelf::Debug::Line: .* $re_msg_tail|^error while attempting to parse .* \(maybe not an object file\?\) $re_msg_tail!,
      'non-existing command fails');
 like($stderr,
      qr/^(?:TODO: Is there some possible message here\?)?/,

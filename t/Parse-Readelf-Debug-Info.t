@@ -142,12 +142,14 @@ eval {
     my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
     my $x = new Parse::Readelf::Debug::Info($filepath);
 };
+# Windows fails on closing of pipe, not on opening, therefore we
+# accept both messages here:
 like($@,
-     qr|^can't parse .* with ".*" in Parse::Readelf::Debug::Info: .* $re_msg_tail|,
+     qr!^can't parse .* with ".*" in Parse::Readelf::Debug::Info: .* $re_msg_tail|^error while attempting to parse .* \(maybe not an object file\?\) $re_msg_tail!,
      'non-existing command fails');
 delete $SIG{__WARN__};
 like($@,
-     qr|^can't parse .* with ".*" in Parse::Readelf::Debug::Info: .* $re_msg_tail|,
+     qr!^can't parse .* with ".*" in Parse::Readelf::Debug::Info: .* $re_msg_tail|^error while attempting to parse .* \(maybe not an object file\?\) $re_msg_tail!,
      'non-existing command fails');
 like($stderr,
      qr/^(?:TODO: Is there some possible message here\?)?/,

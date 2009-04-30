@@ -1,8 +1,10 @@
+Build.PL
 Changes
 Examples/StructureLayoutTest.cpp
 Examples/run_examples.pl
 Examples/structure_layout.pl
 MANIFEST
+META.yml
 Makefile.PL
 README
 lib/Parse/Readelf.pm
@@ -11,9 +13,8 @@ lib/Parse/Readelf/Debug/Line.pm
 t/Parse-Readelf-Debug-Info.t
 t/Parse-Readelf-Debug-Line.t
 t/Parse-Readelf.t
-t/pod-coverage.t
-t/pod.t
 t/data/broken_info-1.lst
 t/data/broken_info-2.lst
 t/data/debug_info.lst
-META.yml                                 Module meta-data (added by MakeMaker)
+t/pod-coverage.t
+t/pod.t
