@@ -82,7 +82,7 @@ like($@,
 
 #########################################################################
 # first "real" tests:
-my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
+my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
 my $readelf_data = new Parse::Readelf($filepath);
 is(ref($readelf_data), 'Parse::Readelf', 'created Parse::Readelf object');
 

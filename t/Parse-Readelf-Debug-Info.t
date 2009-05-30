@@ -8,7 +8,7 @@
 
 #########################################################################
 
-use Test::More tests => 58;
+use Test::More tests => 79;
 
 use File::Spec;
 
@@ -77,8 +77,10 @@ eval { import Parse::Readelf::Debug::Info ':fixed_regexps' };
 is($@, '', "import with ':fixed_regexps'");
 test_globals(':fixed_regexps',
 	     {'$command' => undef,
-	      '$re_section_start' => qr(^The section .debug_info contains:),
-	      '$re_dwarf_version' => qr(^\s*Version:\s+(\d+)\s*$)});
+	      '$re_section_start' => qr(^The section \.debug_info contains:),
+	      '$re_section_stop'  => qr(^The section \.debug_.* contains:|^Contents of the \.debug_.* section:),
+	      '$re_dwarf_version' => qr(^\s*Version:\s+(\d+)\s*$)}
+	    );
 reset_globals();
 
 eval { import Parse::Readelf::Debug::Info ':versioned_regexps' };
@@ -93,8 +95,10 @@ eval { import Parse::Readelf::Debug::Info ':all' };
 is($@, '', "import with ':all'");
 test_globals(':all',
 	     {'$command' => 'readelf --debug-dump=info',
-	      '$re_section_start' => qr(^The section .debug_info contains:),
-	      '$re_dwarf_version' => qr(^\s*Version:\s+(\d+)\s*$)});
+	      '$re_section_start' => qr(^The section \.debug_info contains:),
+	      '$re_section_stop'  => qr(^The section \.debug_.* contains:|^Contents of the \.debug_.* section:),
+	      '$re_dwarf_version' => qr(^\s*Version:\s+(\d+)\s*$)}
+	    );
 reset_globals();
 
 eval { import Parse::Readelf::Debug::Info };
@@ -129,7 +133,7 @@ like($@,
      qr|^Parse::Readelf::Debug::Info can't find .* $re_msg_tail|,
      'bad file name fails');
 eval {
-    my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
+    my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
     my $x = new Parse::Readelf::Debug::Info($filepath, '')
 };
 like($@,
@@ -139,7 +143,7 @@ $stderr = '';
 $SIG{__WARN__} = sub { $stderr .= join('', @_) };
 eval {
     local $Parse::Readelf::Debug::Info::command	= 'failing-test-expected-here';
-    my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
+    my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
     my $x = new Parse::Readelf::Debug::Info($filepath);
 };
 # Windows fails on closing of pipe, not on opening, therefore we
@@ -158,7 +162,7 @@ eval {
     no warnings 'once';
     local @Parse::Readelf::Debug::Info::re_item_start =
 	(undef, undef, undef);
-    my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
+    my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
     my $x = new Parse::Readelf::Debug::Info($filepath);
 };
 like($@,
@@ -173,7 +177,7 @@ like($@,
      'missing or empty debug info section (header) fails');
 eval {
     local $Parse::Readelf::Debug::Info::command = 'perl -e "exit(-1);"';
-    my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
+    my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
     my $x = new Parse::Readelf::Debug::Info($filepath);
 };
 like($@,
@@ -181,8 +185,8 @@ like($@,
      'command returning -1 fails');
 
 #########################################################################
-# tests with with imported data:
-my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
+# tests with with imported data (old format):
+my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
 my $debug_info = new Parse::Readelf::Debug::Info($filepath);
 is(ref($debug_info), 'Parse::Readelf::Debug::Info',
    'created Parse::Readelf::Debug::Info object');
@@ -232,6 +236,10 @@ my $structure1 = $item_ids[0];
 @structure_layout_2 = $debug_info->structure_layout($structure1);
 isnt(@structure_layout_1, @structure_layout_2,
      'display_nested_items makes a difference');
+{
+    no warnings 'once';
+    $Parse::Readelf::Debug::Info::display_nested_items = 0;
+}
 
 @item_ids = $debug_info->item_ids('money_base');
 is(@item_ids, 2, '2 money_base found');
@@ -249,3 +257,68 @@ like($stderr,
      'cloning gives a warning');
 is(ref($debug_info), 'Parse::Readelf::Debug::Info',
    'created new Parse::Readelf::Debug::Info object');
+
+#########################################################################
+# tests with with imported data (new format):
+$filepath = File::Spec->catfile($path, 'data', 'debug_info_2.lst');
+$debug_info = new Parse::Readelf::Debug::Info($filepath);
+is(ref($debug_info), 'Parse::Readelf::Debug::Info',
+   'created Parse::Readelf::Debug::Info object');
+
+@item_ids = $debug_info->item_ids('l_object2a');
+is(@item_ids, 1, '1 l_object2a found');
+$l_object2a = $item_ids[0];
+
+@item_ids = $debug_info->item_ids('object_x');
+is(@item_ids, 0, '0 object_x found');
+
+@item_ids = $debug_info->item_ids('npos');
+is(@item_ids, 3, '3 npos found');
+
+@item_ids = $debug_info->item_ids_matching('^l_');
+is(@item_ids, 7, '7 IDs matching "^l_"');
+
+@item_ids = $debug_info->item_ids_matching('^l_object2');
+is(@item_ids, 2, '2 IDs matching "^l_object2"');
+$l_object2b = $item_ids[ $item_ids[0] eq $l_object2a ? 1 : 0 ];
+isnt($l_object2a, $l_object2b, '2 l_object2N distinguished');
+
+@item_ids = $debug_info->item_ids_matching('l_');
+is(@item_ids, 15, '15 IDs matching "l_"');
+
+@item_ids = $debug_info->item_ids_matching('l_', 'variable');
+is(@item_ids, 7, '7 variable IDs matching "l_"');
+
+@item_ids = $debug_info->item_ids_matching('', 'variable');
+is(@item_ids, 85, '85 variable IDs');
+
+@structure_layout_1 = $debug_info->structure_layout($l_object2a);
+@structure_layout_2 = $debug_info->structure_layout($l_object2b);
+$structure_layout_2[0][1] = 'l_object2a';
+$structure_layout_2[0][4][2] = $structure_layout_1[0][4][2];
+is_deeply(\@structure_layout_1, \@structure_layout_2, 'l_object2N similar');
+
+@item_ids = $debug_info->item_ids('Structure1');
+is(@item_ids, 1, '1 Structure1 found');
+$structure1 = $item_ids[0];
+
+@structure_layout_1 = $debug_info->structure_layout($structure1);
+{
+    no warnings 'once';
+    $Parse::Readelf::Debug::Info::display_nested_items = 1;
+}
+@structure_layout_2 = $debug_info->structure_layout($structure1);
+isnt(@structure_layout_1, @structure_layout_2,
+     'display_nested_items makes a difference');
+
+@item_ids = $debug_info->item_ids('money_base');
+is(@item_ids, 2, '2 money_base found');
+@structure_layout_1 = $debug_info->structure_layout($item_ids[1]);
+is($structure_layout_1[0][1], 'money_base', 'money_base is ok');
+
+# check newer code paths (TAGs added in later versions):
+@item_ids = $debug_info->item_ids('l_cvInt');
+is(@item_ids, 1, '1 l_cvInt found');
+@structure_layout_1 = $debug_info->structure_layout($item_ids[0]);
+is($structure_layout_1[0][2], 'const volatile int&',
+   'const volatile int& is ok');

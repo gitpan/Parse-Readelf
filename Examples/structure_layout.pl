@@ -6,7 +6,7 @@
 # information in files ending with ".lst").
 #
 # Author: Thomas Dorner
-# Copyright: (C) 2007 by Thomas Dorner (Artistic License)
+# Copyright: (C) 2007-2009 by Thomas Dorner (Artistic License)
 
 use strict;
 use warnings;
@@ -27,6 +27,7 @@ die "usage: structure-layout.pl <regexp-for-identifier> <object-file>...\n"
     unless 2 <= @ARGV;
 
 my $re_identifier = shift @ARGV;
+$re_identifier = join('', <STDIN>) if $re_identifier eq '-';
 
 # save commands to reset them if changed later:
 my $prdl_cmd = $Parse::Readelf::Debug::Line::command;
@@ -52,7 +53,7 @@ my $prdi_cmd = $Parse::Readelf::Debug::Info::command;
 foreach my $object (@ARGV)
 {
     # handle preextracted lists:
-    if ($object =~ m/\.lst$/)
+    if ($object eq '-'  or  $object =~ m/\.lst$/)
     {
 	$Parse::Readelf::Debug::Line::command = 'cat';
 	$Parse::Readelf::Debug::Info::command = 'cat';

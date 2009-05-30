@@ -3,7 +3,7 @@
 
    This is the source used to create the test data t/data/debug_info.lst.
 
-   Copyright (C) 2006-2007 by Thomas Dorner
+   Copyright (C) 2006-2009 by Thomas Dorner
 
    @author Thomas Dorner
 
@@ -71,6 +71,7 @@ int main()
 	std::string m_string;
 	int         m_01_int;
     } l_object4;
+    volatile const int& l_cvInt = l_object4.m_01_int;
     l_object4.m_string = "Teststring";
     std::cout << "sizeof(Structure1) == " << sizeof(Structure1) << "\n"
 	      << "offsetof(Structure1, m_04_pointer) == "
@@ -80,5 +81,6 @@ int main()
 	      << "sizeof(l_object2b) == " << sizeof(l_object2b) << "\n"
 	      << "sizeof(l_cObject2b) == " << sizeof(l_cObject2b) << "\n"
 	      << "sizeof(l_object3) == " << sizeof(l_object3) << "\n"
-	      << "sizeof(l_object4) == " << sizeof(l_object4) << "\n";
+	      << "sizeof(l_object4) == " << sizeof(l_object4) << "\n"
+	      << "sizeof(l_cvInt) == " << sizeof(l_cvInt) << "\n";
 }

@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use Parse::Readelf::Debug::Line;
 
@@ -76,7 +76,9 @@ our @EXPORT = qw();
 our %EXPORT_TAGS =
     (command => [ qw($command) ],
      config => [ qw($display_nested_items $re_substructure_filter) ],
-     fixed_regexps => [ qw($re_section_start $re_dwarf_version) ],
+     fixed_regexps => [ qw($re_section_start
+			   $re_section_stop
+			   $re_dwarf_version) ],
      versioned_regexps => [ qw(@re_item_start
 			       @re_bit_offset
 			       @re_bit_size
@@ -161,6 +163,11 @@ our $re_substructure_filter = '^string$';
 is the regular expression that recognises the start of the line debug
 output of C<readelf>.
 
+=item I<$re_section_stop>
+
+is the regular expression that recognises the start of another debug
+output of C<readelf>.
+
 =item I<$re_dwarf_version>
 
 is the regular expression that recognises the Dwarf version line in a
@@ -173,7 +180,10 @@ integer number which will (must) be stored in C<$1>.
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-our $re_section_start = qr(^The section .debug_info contains:);
+our $re_section_start = qr(^The section \.debug_info contains:);
+
+our $re_section_stop =
+    qr(^The section \.debug_.* contains:|^Contents of the \.debug_.* section:);
 
 our $re_dwarf_version = qr(^\s*Version:\s+(\d+)\s*$);
 
@@ -312,66 +322,82 @@ our @re_item_start =
     );
 
 our @re_bit_offset =
-    ( undef, undef, qr(^\s*DW_AT_bit_offset\s*:\s+(\d+))i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_bit_offset\s*:\s+(\d+))i );
 
 our @re_bit_size =
-    ( undef, undef, qr(^\s*DW_AT_bit_size\s*:\s+(\d+))i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_bit_size\s*:\s+(\d+))i );
 
 our @re_byte_size =
-    ( undef, undef, qr(^\s*DW_AT_byte_size\s*:\s+(\d+))i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_byte_size\s*:\s+(\d+))i );
 
 our @re_comp_dir =
-    ( undef, undef, qr(^\s*DW_AT_comp_dir\s*:(?:.+:)?\s+(.+))i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_comp_dir\s*:(?:.+:)?\s+(.+))i );
 
 our @re_const_value =
-    ( undef, undef, qr(^\s*DW_AT_const_value\s*:\s+([-\d]+))i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_const_value\s*:\s+([-\d]+))i );
 
 our @re_decl_file =
-    ( undef, undef, qr(^\s*DW_AT_decl_file\s*:\s+(\d+))i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_decl_file\s*:\s+(\d+))i );
 
 our @re_decl_line =
-    ( undef, undef, qr(^\s*DW_AT_decl_line\s*:\s+(\d+))i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_decl_line\s*:\s+(\d+))i );
 
 our @re_declaration =
-    ( undef, undef, qr(^\s*DW_AT_declaration\s*:\s+(\d+))i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_declaration\s*:\s+(\d+))i );
 
 our @re_encoding =
-    ( undef, undef, '^\s*DW_AT_encoding\s*:\s+\d+\s+\(([a-z ]+)\)' );
+    ( undef, undef,
+      '^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_encoding\s*:\s+\d+\s+\(([a-z ]+)\)' );
 
 our @re_external =
-    ( undef, undef, qr(^\s*DW_AT_external\s*:\s+(\d+))i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_external\s*:\s+(\d+))i );
 
 our @re_language =
-    ( undef, undef, '^\s*DW_AT_language\s*:\s+\d+\s+\((.+)\)' );
+    ( undef, undef,
+      '^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_language\s*:\s+\d+\s+\((.+)\)' );
 
 our @re_location =
     ( undef, undef,
-      qr(^\s*DW_AT_location\s*:\s*\d+ byte block:\s+([[:xdigit:]]{1,2}(?: [[:xdigit:]]{1,2})+)\s+\W)i
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_location\s*:\s*\d+ byte block:\s+([[:xdigit:]]{1,2}(?: [[:xdigit:]]{1,2})+)\s+\W)i
     );
 
 our @re_member_location =
     ( undef, undef,
-      qr(^\s*DW_AT_data_member_location:.*DW_OP_plus_uconst:\s+(\d+))i
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_data_member_location:.*DW_OP_plus_uconst:\s+(\d+))i
     );
 
 our @re_name_tag =
-    ( undef, undef, qr(^\s*DW_AT_name\s*.*:\s+(.*[\w>]))i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_name\s*.*:\s+(.*[\w>]))i );
 
 our @re_producer =
-    ( undef, undef, '^\s*DW_AT_producer\s*:(?:\s+\(.+\):)?\s+(.+)' );
+    ( undef, undef,
+      '^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_producer\s*:(?:\s+\(.+\):)?\s+(.+)' );
 
 our @re_specification =
-    ( undef, undef, qr(^\s*DW_AT_specification\s*:\s+<([0-9A-F]+)>)i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_specification\s*:\s+<([0-9A-F]+)>)i );
 
 our @re_type =
-    ( undef, undef, qr(^\s*DW_AT_type\s*:\s+<([0-9A-F]+)>)i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_type\s*:\s+<([0-9A-F]+)>)i );
 
 our @re_upper_bound =
-    ( undef, undef, qr(^\s*DW_AT_upper_bound\s*:\s+(\d+))i );
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_upper_bound\s*:\s+(\d+))i );
 
 our @re_ignored_attributes =
     ( undef, undef,
-      qr(^\s*DW_AT_(?:artificial|high_pc|low_pc|sibling|stmt_list))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_(?:artificial|high_pc|low_pc|sibling|stmt_list))i );
 
 our @tag_needs_attributes =
     (
@@ -393,7 +419,8 @@ our @tag_needs_attributes =
       DW_TAG_subrange_type => [ qw(upper_bound) ],
       DW_TAG_typedef => [ qw(name type) ],
       DW_TAG_union_type => [ qw(name byte_size) ],
-      DW_TAG_variable => [ qw(name type) ]
+      DW_TAG_variable => [ qw(name type) ],
+      DW_TAG_volatile_type => [ qw(type) ]
      }
     );
 
@@ -504,7 +531,6 @@ sub new($$;$)
     my $compilation_unit = -1;
     while (<READELF>)
     {
-
 	if (m/$re_dwarf_version/)
 	{
 	    $version = $1;
@@ -516,6 +542,10 @@ sub new($$;$)
 	    $compilation_unit++;
 	}
 	next unless $version >= 0;
+
+	# stop at end of section:
+	last if m/$re_section_stop/;
+
 	# handle the beginning (and therefore the change) of an item:
 	if (m/$re_item_start[$version]/i)
 	{
@@ -889,21 +919,28 @@ sub structure_layout($$;$)
 		# const:
 		if ($type->{type_tag} eq 'DW_TAG_const_type')
 		{
-		    $prefix = 'const ';
+		    $prefix .= 'const ' unless $prefix =~ m/const/;
+		    $type = $this->{item_map}->{$type->{type}};
+		    next;
+		}
+		# volatile:
+		elsif ($type->{type_tag} eq 'DW_TAG_volatile_type')
+		{
+		    $prefix .= 'volatile ' unless $prefix =~ m/volatile/;
 		    $type = $this->{item_map}->{$type->{type}};
 		    next;
 		}
 		# reference:
 		elsif ($type->{type_tag} eq 'DW_TAG_reference_type')
 		{
-		    $postfix = '&';
+		    $postfix .= '&';
 		    $type = $this->{item_map}->{$type->{type}};
 		    next;
 		}
 		# pointer:
 		elsif ($type->{type_tag} eq 'DW_TAG_pointer_type')
 		{
-		    $postfix = '*';
+		    $postfix .= '*';
 		    if (defined $type->{type}  and
 			defined $this->{item_map}->{$type->{type}})
 		    {
@@ -1038,7 +1075,7 @@ Thomas Dorner, E<lt>dorner (AT) pause.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007 by Thomas Dorner
+Copyright (C) 2007-2009 by Thomas Dorner
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.6.1 or,

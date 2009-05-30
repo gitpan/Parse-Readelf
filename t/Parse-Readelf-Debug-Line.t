@@ -155,7 +155,7 @@ $stderr = '';
 $SIG{__WARN__} = sub { $stderr .= join('', @_) };
 eval {
     local $Parse::Readelf::Debug::Line::command	= 'failing-test-expected-here';
-    my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
+    my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
     my $x = new Parse::Readelf::Debug::Line($filepath);
 };
 delete $SIG{__WARN__};
@@ -169,7 +169,7 @@ eval {
     no warnings 'once';
     local @Parse::Readelf::Debug::Line::re_directory_table =
 	(undef, undef, undef);
-    my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
+    my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
     my $x = new Parse::Readelf::Debug::Line($filepath);
 };
 like($@,
@@ -179,7 +179,7 @@ eval {
     no warnings 'once';
     local @Parse::Readelf::Debug::Line::re_file_name_table =
 	(undef, undef, undef);
-    my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
+    my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
     my $x = new Parse::Readelf::Debug::Line($filepath);
 };
 like($@,
@@ -189,7 +189,7 @@ eval {
     no warnings 'once';
     local @Parse::Readelf::Debug::Line::re_file_name_table_header =
 	(undef, undef, undef);
-    my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
+    my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
     my $x = new Parse::Readelf::Debug::Line($filepath);
 };
 like($@,
@@ -204,7 +204,7 @@ like($@,
      'missing file name table header fails');
 eval {
     local $Parse::Readelf::Debug::Line::command = 'perl -e "exit(-1);"';
-    my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
+    my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
     my $x = new Parse::Readelf::Debug::Line($filepath);
 };
 like($@,
@@ -213,7 +213,7 @@ like($@,
 
 #########################################################################
 # first "real" tests:
-my $filepath = File::Spec->catfile($path, 'data', 'debug_info.lst');
+my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
 my $line_info = new Parse::Readelf::Debug::Line($filepath);
 is(ref($line_info), 'Parse::Readelf::Debug::Line',
    'created Parse::Readelf::Debug::Line object');

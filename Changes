@@ -1,5 +1,10 @@
 Revision history for Perl extension Parse::Readelf.
 
+0.05	(19.05.2009-30.05.2009)
+	support of newer readelf/objdump versions
+	example script now supports STDIN
+	added support of volatile TAG, bugfix of postfixes
+
 0.04	(05.04.2008-30.04.2009)
 	hopefully fixed tests for Windows
 	added Build.PL
