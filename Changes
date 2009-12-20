@@ -1,5 +1,12 @@
 Revision history for Perl extension Parse::Readelf.
 
+0.06	(11.11.2009-20.12.2009)
+	avoid SIGPIPE on close in tests 63++ of Parse-Readelf-Debug-Info.t
+	fixed installation INC path in example structure_layout.pl
+	fixed regexps to recognise changed output of newer readelf
+	fixed sort order for structure layout
+	added special handling of items with info for other items
+
 0.05	(19.05.2009-30.05.2009)
 	support of newer readelf/objdump versions
 	example script now supports STDIN

@@ -30,11 +30,12 @@ inside of the object or one of its subobjects.  This information can
 be accessed afterwards using a bunch of getter methods, see
 L</"METHODS"> for details.
 
-THIS IS ALPHA SOFTWARE, USE AT YOUR OWN RISK.
+This is BETA software, use at your own risk.
 
-AT THE MOMENT ONLY INFORMATION REGARDING THE BINARY ARRANGEMENT OF
-VARIABLES (STRUCTURE LAYOUT) IS SUPPORTED.  Other data is ignored for
-now.
+at the moment only information regarding the binary arrangement of
+variables (Structure Layout) is supported (and that is regularly used
+at my company, so the worst bugs should by found by now).  Other data
+is ignored for now.
 
 Currently only output for B<Dwarf version 2> is supported.  Please
 contact the author for other versions and provide some example
@@ -49,7 +50,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use Parse::Readelf::Debug::Line;
 use Parse::Readelf::Debug::Info;
@@ -57,6 +58,9 @@ use Parse::Readelf::Debug::Info;
 #########################################################################
 
 =head1 EXPORT
+
+Nothing is exported by default as it's normally not needed to modify
+the following variable:
 
 This module exports nothing directly, it should be accessed via its
 methods only.
@@ -69,8 +73,29 @@ require Exporter;
 
 our @ISA = qw(Exporter);
 our @EXPORT = qw();
-our %EXPORT_TAGS = ();
-our @EXPORT_OK = ();
+our %EXPORT_TAGS = ( 'all' => [ qw(@structure_layout_types) ] );
+our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
+
+#########################################################################
+
+=head2 I<@structure_layout_types>
+
+is a list of the types that can be printed in a structure layout.  Its
+elements are basically the tag identifieres from C<readelf>'s output
+without the prefix B<DW_TAG_>.
+
+=cut
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+our @structure_layout_types = qw(class
+				 enumerat
+				 member
+				 structure
+				 subrange
+				 typedef
+				 union
+				 variable);
 
 #########################################################################
 
@@ -168,17 +193,12 @@ sub print_structure_layout($$;$)
 
     # get item IDs for all matching items:
     my @ids =
-	$this->{debug_info}->item_ids_matching($re_name,
-					       '^DW_TAG_(?:'.
-					       join('|', qw(enumerat
-							    member
-							    structure
-							    subrange
-							    typedef
-							    union
-							    variable)).
-				      ')' # TODO: make this EXPORT VARIABLE
-				     );
+	$this->{debug_info}
+	    ->item_ids_matching($re_name,
+				'^DW_TAG_(?:'.
+				join('|', @structure_layout_types).
+				')'
+			       );
 
     # get layout for each item
     my @layouts = ();
@@ -237,7 +257,7 @@ __END__
 
 =head1 KNOWN BUGS
 
-Did I mentioned that this is Alpha code?
+Did I mentioned that this is Beta code?
 
 Only Dwarf version 2 is supported.  Please contact the author for
 other versions and provide some example C<readelf> outputs.
@@ -256,7 +276,7 @@ Thomas Dorner, E<lt>dorner (AT) pause.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007 by Thomas Dorner
+Copyright (C) 2007-2009 by Thomas Dorner
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.6.1 or,

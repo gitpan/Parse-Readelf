@@ -4,7 +4,7 @@
 # compiled from the example sources here.
 #
 # Author: Thomas Dorner
-# Copyright: (C) 2007 by Thomas Dorner (Artistic License)
+# Copyright: (C) 2007-2009 by Thomas Dorner (Artistic License)
 
 use strict;
 use warnings;
@@ -29,7 +29,9 @@ my %output = (StructureLayoutTest =>
 	       '^sizeof\(l_object2b\) == \d{1,2}$',
 	       '^sizeof\(l_cObject2b\) == \d{1,2}$',
 	       '^sizeof\(l_object3\) == \d{1,2}$',
-	       '^sizeof\(l_object4\) == \d{1,2}$']);
+	       '^sizeof\(l_object4\) == \d{1,2}$',
+	       '^sizeof\(l_cvInt\) == \d{1,2}$',
+	       '^sizeof\(l_objectU\) == \d{1,2}$']);
 foreach my $base (keys %source)
 {
  FORMAT:

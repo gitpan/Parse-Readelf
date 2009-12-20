@@ -1,4 +1,4 @@
-Parse-Readelf version 0.05
+Parse-Readelf version 0.06
 ==========================
 
 Parse::Readelf is a module to parse the output of readelf from the GNU
@@ -51,11 +51,19 @@ BUGS
 This is quite incomplete yet.  I only worked on that what I needed
 most which was the memory layout of variables and data types.
 
-Feedback, additional debugger outputs or patches are very much appreciated.
+Also note that though the self-tests almost completely cover the code,
+they use prerecorded input which may differ from your installation.
+If that's the case (and the results are not what you expected), please
+send me an example output of "readelf --debug-dump=line,info --wide"
+(e.g. from Examples/StructureLayoutTest.cpp, see head of that source
+for further details).
+
+Feedback, additional debugger outputs or patches are very much
+appreciated.
 
 COPYRIGHT AND LICENCE
 
-Copyright (C) 2007-2009 by Thomas Dorner
+Copyright (C) 2007-2009 by Thomas Dorner (dorner (AT) cpan (DOT) org)
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.6.1 or,

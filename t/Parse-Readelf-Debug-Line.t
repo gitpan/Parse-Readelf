@@ -8,6 +8,8 @@
 
 #########################################################################
 
+use strict;
+
 use Test::More tests => 132;
 
 use File::Spec;
@@ -86,7 +88,7 @@ is($@, '', "import with ':fixed_regexps'");
 test_globals(':fixed_regexps',
 	     {'$command' => undef,
 	      '$re_section_start'
-	      => qr(^Dump of debug contents of section \.debug_line:)i,
+	      => qr(^(?:raw )?dump of debug contents of section \.debug_line:)i,
 	      '$re_dwarf_version' => qr(^\s*DWARF Version:\s+(\d+)\s*$)i,
 	      '@re_directory_table' => undef,
 	      '@re_file_name_table' => undef,
@@ -112,7 +114,7 @@ is($@, '', "import with ':all'");
 test_globals(':all',
 	     {'$command' => 'readelf --debug-dump=line',
 	      '$re_section_start'
-	      => qr(^Dump of debug contents of section \.debug_line:)i,
+	      => qr(^(?:raw )?dump of debug contents of section \.debug_line:)i,
 	      '$re_dwarf_version' => qr(^\s*DWARF Version:\s+(\d+)\s*$)i,
 	      '@re_directory_table'
 	      => [undef, undef, qr(^\s*The Directory Table)i],
@@ -135,6 +137,7 @@ test_globals('<empty import list>',
 #########################################################################
 # prepare testing with recorded data:
 my ($volume, $directories, ) = File::Spec->splitpath($0);
+$directories = '.' unless $directories;
 my $path = File::Spec->catpath($volume, $directories, '');
 $Parse::Readelf::Debug::Line::command = 'cat';
 
@@ -151,7 +154,7 @@ eval {
 like($@,
      qr|^Parse::Readelf::Debug::Line can't find .* $re_msg_tail|, #'
      'bad file name fails');
-$stderr = '';
+my $stderr = '';
 $SIG{__WARN__} = sub { $stderr .= join('', @_) };
 eval {
     local $Parse::Readelf::Debug::Line::command	= 'failing-test-expected-here';

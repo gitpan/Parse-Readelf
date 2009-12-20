@@ -1,7 +1,8 @@
 /**
    @file test layout of structures
 
-   This is the source used to create the test data t/data/debug_info.lst.
+   This is the source used to create the newest version (highest version
+   number N) of the test data t/data/debug_info_N.lst.
 
    Copyright (C) 2006-2009 by Thomas Dorner
 
@@ -54,6 +55,26 @@ struct Structure2
     long long       m_01_long_long;
 };
 
+class StructureWithUnion
+{
+    unsigned short  m_00_short;
+    struct
+    {
+        short       m_01_00_4_short_bits:4;
+        short       m_01_01_12_short_bits:12;
+    }               m_01_substructure;
+    int             m_02_int;
+    union
+    {
+        unsigned    m_03_00_24_first_int_bits:24;
+        struct
+        {
+            char     m_03_01_00_char_array_3[3];
+            unsigned m_03_01_01_24_second_int_bits:24;
+        };
+    };
+};
+
 int main()
 {
     Structure1 l_object1;
@@ -73,14 +94,16 @@ int main()
     } l_object4;
     volatile const int& l_cvInt = l_object4.m_01_int;
     l_object4.m_string = "Teststring";
-    std::cout << "sizeof(Structure1) == " << sizeof(Structure1) << "\n"
+    StructureWithUnion l_objectU;
+    std::cout << "sizeof(Structure1) == "  << sizeof(Structure1)  << "\n"
 	      << "offsetof(Structure1, m_04_pointer) == "
-	      << offsetof(Structure1, m_04_pointer) << "\n"
-	      << "sizeof(l_object1) == " << sizeof(l_object1) << "\n"
-	      << "sizeof(l_object2a) == " << sizeof(l_object2a) << "\n"
-	      << "sizeof(l_object2b) == " << sizeof(l_object2b) << "\n"
+	      <<  offsetof(Structure1, m_04_pointer)              << "\n"
+	      << "sizeof(l_object1) == "   << sizeof(l_object1)   << "\n"
+	      << "sizeof(l_object2a) == "  << sizeof(l_object2a)  << "\n"
+	      << "sizeof(l_object2b) == "  << sizeof(l_object2b)  << "\n"
 	      << "sizeof(l_cObject2b) == " << sizeof(l_cObject2b) << "\n"
-	      << "sizeof(l_object3) == " << sizeof(l_object3) << "\n"
-	      << "sizeof(l_object4) == " << sizeof(l_object4) << "\n"
-	      << "sizeof(l_cvInt) == " << sizeof(l_cvInt) << "\n";
+	      << "sizeof(l_object3) == "   << sizeof(l_object3)   << "\n"
+	      << "sizeof(l_object4) == "   << sizeof(l_object4)   << "\n"
+	      << "sizeof(l_cvInt) == "     << sizeof(l_cvInt)     << "\n"
+	      << "sizeof(l_objectU) == "   << sizeof(l_objectU)   << "\n";
 }

@@ -8,6 +8,8 @@
 
 #########################################################################
 
+use strict;
+
 use Test::More tests => 96;
 
 use File::Spec;
@@ -27,6 +29,7 @@ my $re_msg_tail = qr/at .*Parse-Readelf\.t line \d{2,}$/;
 #########################################################################
 # prepare testing with recorded data:
 my ($volume, $directories, ) = File::Spec->splitpath($0);
+$directories = '.' unless $directories;
 my $path = File::Spec->catpath($volume, $directories, '');
 {
     no warnings 'once';
@@ -142,13 +145,13 @@ check_stdout
      qr'^12\s+m_03_char_array_6\[6\]\s+char \(6\)\s+$',
      qr'^24\s+m_04_pointer\s+void\* \(8\)\s+$',
      qr'^32\s+m_06_char_followed_by_filler_for_bit_array\s+char \(1\)\s+$',
-     qr'^32\.23\s+m_07_00_1_int_bit\s+unsigned int \(1 in 4\)\s+$',
-     qr'^32\.21\s+m_07_01_2_int_bits\s+unsigned int \(2 in 4\)\s+$',
      qr'^32\.18\s+m_07_02_3_int_bits\s+unsigned int \(3 in 4\)\s+$',
+     qr'^32\.21\s+m_07_01_2_int_bits\s+unsigned int \(2 in 4\)\s+$',
+     qr'^32\.23\s+m_07_00_1_int_bit\s+unsigned int \(1 in 4\)\s+$',
      qr'^34\s+m_08_char_between_bit_arrays_followed_by_filler\s+char \(1\)\s+$',
-     qr'^35.7\s+m_09_00_1_char_bit\s+unsigned char \(1 in 1\)\s+$',
-     qr'^35.5\s+m_09_01_2_char_bits\s+unsigned char \(2 in 1\)\s+$',
      qr'^35.2\s+m_09_02_3_char_bits\s+unsigned char \(3 in 1\)\s+$',
+     qr'^35.5\s+m_09_01_2_char_bits\s+unsigned char \(2 in 1\)\s+$',
+     qr'^35.7\s+m_09_00_1_char_bit\s+unsigned char \(1 in 1\)\s+$',
      qr'^36\s+m_10_substructure\s+\._84 \(4\)\s+$',
      qr'^36\s+\._84\s+\(4\)\s+$',
      qr'^36\s+m_10_00_char\s+char \(1\)\s+$',
@@ -181,7 +184,7 @@ check_stdout('^l_',
 
 #########################################################################
 # finally some tests with a cloned object:
-$stderr = '';
+my $stderr = '';
 $SIG{__WARN__} = sub { $stderr .= join('', @_) };
 $readelf_data = $readelf_data->new($filepath);
 delete $SIG{__WARN__};

@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use Parse::Readelf::Debug::Line;
 
@@ -180,7 +180,8 @@ integer number which will (must) be stored in C<$1>.
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-our $re_section_start = qr(^The section \.debug_info contains:);
+our $re_section_start =
+    qr(^The section \.debug_info contains:|^Contents of the \.debug_info section:);
 
 our $re_section_stop =
     qr(^The section \.debug_.* contains:|^Contents of the \.debug_.* section:);
@@ -385,11 +386,11 @@ our @re_producer =
 
 our @re_specification =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_specification\s*:\s+<([0-9A-F]+)>)i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_specification\s*:\s+<(?:0x)?([0-9A-F]+)>)i );
 
 our @re_type =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_type\s*:\s+<([0-9A-F]+)>)i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_type\s*:\s+<(?:0x)?([0-9A-F]+)>)i );
 
 our @re_upper_bound =
     ( undef, undef,
@@ -397,7 +398,7 @@ our @re_upper_bound =
 
 our @re_ignored_attributes =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_(?:artificial|high_pc|low_pc|sibling|stmt_list))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_(?:artificial|high_pc|low_pc|macro_info|ranges|sibling|stmt_list))i );
 
 our @tag_needs_attributes =
     (
@@ -406,6 +407,7 @@ our @tag_needs_attributes =
      {
       DW_TAG_array_type => [ qw(type) ],
       DW_TAG_base_type => [ qw(name) ],
+      DW_TAG_class_type => [],
       DW_TAG_const_type => [ qw(type) ],
       DW_TAG_compile_unit => [ qw(name) ],
       DW_TAG_enumerator => [ qw(name) ],
@@ -544,7 +546,11 @@ sub new($$;$)
 	next unless $version >= 0;
 
 	# stop at end of section:
-	last if m/$re_section_stop/;
+	if (m/$re_section_stop/)
+	{
+	    my $dummy = grep /nothing/, <READELF>; # avoid SIGPIPE in close
+	    last;
+	}
 
 	# handle the beginning (and therefore the change) of an item:
 	if (m/$re_item_start[$version]/i)
@@ -555,11 +561,23 @@ sub new($$;$)
 		foreach (@$needed_attributes)
 		{
 		    next if defined $item->{$_};
+		    # special handling of items that contain
+		    # additional info needed by other items:
+		    if ($item->{type_tag} eq 'DW_TAG_member' &&
+			defined $item->{member_location} &&
+			defined $item->{type} &&
+			defined $self{item_map}->{$item->{type}} &&
+			! defined
+			$self{item_map}->{$item->{type}}->{member_location})
+		    {
+			$self{item_map}->{$item->{type}}->{member_location} =
+			    $item->{member_location};
+		    }
 #TODO: activate check again later:
-#		    carp('necessary attribute tag ', $_, ' is missing in ',
-#			 $item->{type_tag},
-#			 (defined $item->{name} ? ' for '.$item->{name} : ''),
-#			 ' at position ', $item->{id});
+#		     carp('necessary attribute tag ', $_, ' is missing in ',
+#			  $item->{type_tag},
+#			  (defined $item->{name} ? ' for '.$item->{name} : ''),
+#			  ' at position ', $item->{id});
 		    $item = undef;
 		    last;
 		}
@@ -583,7 +601,8 @@ sub new($$;$)
 		# in another node:
 		my $name = $item->{name};
 		if (not defined $name  and
-		    $item->{type_tag} eq 'DW_TAG_structure_type'  and
+		    $item->{type_tag} =~ m/^DW_TAG_(?:class|structure)_type$/
+		    and
 		    defined $item->{specification}  and
 		    defined $self{item_map}->{$item->{specification}})
 		{
@@ -681,11 +700,11 @@ sub new($$;$)
 	{ $item->{upper_bound} = $1 }
 	elsif (m/$re_ignored_attributes[$version]/)
 	{}
-	elsif (m/^\s+(DW_AT_\w+)\s/)
+	elsif (m/^\s*(?:<[0-9A-F ]+>)?\s*(DW_AT_\w+)\s/)
 	{
-#TODO: activate check again later:
-#	    carp('unknown attribute type ', $1, ' found at position ',
-#		 $item->{id}, ' : ', $_, "\n");
+	    chomp;
+	    carp('unknown attribute type ', $1, ' found at position ',
+		 $item->{id}, ' : ', $_);
 	}
     }
 
@@ -791,7 +810,8 @@ sub item_ids_matching($$;$)
 	next if defined $_->{name}  and  $_->{name} !~ m/$re_name/;
 	next if (not defined $_->{name}  and
 		 $re_name ne ''  and
-		 not ($_->{type_tag} eq 'DW_TAG_structure_type'  and
+		 not ($_->{type_tag} =~ m/^DW_TAG_(?:class|structure)_type$/
+		      and
 		      defined $_->{specification}  and
 		      $this->{item_map}->{$_->{specification}}->{name}
 		      =~ m/$re_name/));
@@ -879,7 +899,7 @@ sub structure_layout($$;$)
 	my $name = $item->{name};
 	if (not defined $name  and
 	    $level < 1 and
-	    $item->{type_tag} eq 'DW_TAG_structure_type'  and
+	    $item->{type_tag} =~ m/^DW_TAG_(?:class|structure)_type$/  and
 	    defined $item->{specification}  and
 	    defined $this->{item_map}->{$item->{specification}})
 	{
@@ -971,7 +991,7 @@ sub structure_layout($$;$)
 	    @sub_layout = $this->structure_layout($item->{type}, $offset);
 
 	    # for templates use shortcut to their specification:
-	    if ($type->{type_tag} eq 'DW_TAG_structure_type'  and
+	    if ($type->{type_tag} =~ m/^DW_TAG_(?:class|structure)_type$/  and
 		defined $type->{specification})
 	    { $type = $this->{item_map}->{$type->{specification}} }
 
@@ -1007,6 +1027,21 @@ sub structure_layout($$;$)
 	foreach (@{$item->{sub_items}})
 	{ push @sub_layout, $this->structure_layout($_->{id}, $offset) }
 
+	# sort sub-structure:
+	if (@sub_layout)
+	{
+	    @sub_layout =
+		sort {
+		    $a->[5] <=> $b->[5]
+			||
+			    (defined $a->[7]
+			     ? (defined $b->[7] ? $a->[7] <=> $b->[7] : 1)
+			     : (defined $b->[7] ? -1 : 0)
+			    )
+			}
+		    @sub_layout;
+	}
+
 	# handle location of definition:
 	my $location = [];
 	if (defined $item->{compilation_unit}  and
@@ -1019,7 +1054,7 @@ sub structure_layout($$;$)
 	}
 
 	# for unnamed singular substructures eliminate singular level:
-	if ($item->{type_tag} eq 'DW_TAG_structure_type'  and
+	if ($item->{type_tag} =~ m/^DW_TAG_(?:class|structure)_type$/  and
 	    not $name  and
 	    not $type_name  and
 	    0 == @bit_data)

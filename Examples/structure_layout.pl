@@ -19,7 +19,7 @@ BEGIN {
     my $libpath = File::Spec->catpath(@split_path[0..1]);
     $libpath = File::Spec->catdir($libpath, '..', 'lib');
     $libpath = File::Spec->rel2abs($libpath);
-    push @INC, $libpath if -d $libpath;
+    unshift @INC, $libpath if -d $libpath;
     require Parse::Readelf;
 };
 

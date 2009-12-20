@@ -55,7 +55,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 #########################################################################
 
@@ -131,7 +131,8 @@ integer number which will (must) be stored in C<$1>.
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-our $re_section_start = qr(^Dump of debug contents of section \.debug_line:)i;
+our $re_section_start =
+    qr(^(?:raw )?dump of debug contents of section \.debug_line:)i;
 
 our $re_dwarf_version = qr(^\s*DWARF Version:\s+(\d+)\s*$)i;
 
@@ -687,7 +688,7 @@ Thomas Dorner, E<lt>dorner (AT) pause.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007 by Thomas Dorner
+Copyright (C) 2007-2009 by Thomas Dorner
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.6.1 or,
