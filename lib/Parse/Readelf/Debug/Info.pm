@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 use Parse::Readelf::Debug::Line;
 
@@ -368,7 +368,7 @@ our @re_language =
 
 our @re_location =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_location\s*:\s*\d+ byte block:\s+([[:xdigit:]]{1,2}(?: [[:xdigit:]]{1,2})+)\s+\W)i
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_location\s*:\s*\d+ byte block:\s+([[:xdigit:]]{1,2}(?: [[:xdigit:]]{1,2})*)\s+\W)i
     );
 
 our @re_member_location =
@@ -398,7 +398,7 @@ our @re_upper_bound =
 
 our @re_ignored_attributes =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_(?:artificial|high_pc|low_pc|macro_info|ranges|sibling|stmt_list))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_(?:artificial|(?:entry|high|low)_pc|macro_info|ranges|sibling|stmt_list))i );
 
 our @tag_needs_attributes =
     (

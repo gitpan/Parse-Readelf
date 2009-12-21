@@ -67,6 +67,7 @@ The section .debug_info contains:
   <15>     DW_AT_comp_dir    : (indirect string, offset: 0x79): /build/buildd/glibc-2.7/build-tree/glibc-2.7/csu	
   <19>     DW_AT_low_pc      : 0x4008fc	
   <21>     DW_AT_high_pc     : 0x4008fc	
+  <25>     DW_AT_entry_pc    : 0
   <29>     DW_AT_stmt_list   : 0	
  <1><2d>: Abbrev Number: 2 (DW_TAG_base_type)
   <2e>     DW_AT_byte_size   : 1	

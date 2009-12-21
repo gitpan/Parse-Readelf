@@ -7343,7 +7343,7 @@ The section .debug_info contains:
      DW_AT_decl_file   : 1	
      DW_AT_decl_line   : 82	
      DW_AT_type        : <c30>	
-     DW_AT_location    : 2 byte block: 91 68 	(DW_OP_fbreg: -24)
+     DW_AT_location    : 1 byte block: 68       (DW_OP_reg24) 
  <1><604e>: Abbrev Number: 91 (DW_TAG_subprogram)
      DW_AT_name        : _GLOBAL__I_main	
      DW_AT_decl_file   : 1	
