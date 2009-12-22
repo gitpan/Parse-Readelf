@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use Parse::Readelf::Debug::Line;
 
@@ -398,7 +398,7 @@ our @re_upper_bound =
 
 our @re_ignored_attributes =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_(?:artificial|(?:entry|high|low)_pc|macro_info|ranges|sibling|stmt_list))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_(?:artificial|(?:entry|high|low)_pc|macro_info|ranges|sibling|stmt_list|location\s*:\s*0x))i );
 
 our @tag_needs_attributes =
     (
