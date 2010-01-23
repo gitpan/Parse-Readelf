@@ -1,5 +1,8 @@
 Revision history for Perl extension Parse::Readelf.
 
+0.09	(21.01.2010)
+	fixed bad results for empty regular expression in item_ids_matching
+
 0.08	(21.12.2009)
 	yet another missing "attribute to be ignored" found
 

@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 use Parse::Readelf::Debug::Line;
 
@@ -801,6 +801,7 @@ sub item_ids_matching($$;$)
 {
     my $this = shift;
     my ($re_name, $re_type_tag) = (@_, '.');
+    $re_name = '.' if $re_name eq '';
     local $_;
 
     my @ids = ();
@@ -1110,7 +1111,7 @@ Thomas Dorner, E<lt>dorner (AT) pause.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007-2009 by Thomas Dorner
+Copyright (C) 2007-2010 by Thomas Dorner
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.6.1 or,

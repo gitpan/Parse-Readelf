@@ -1,6 +1,6 @@
 ---
 name: Parse-Readelf
-version: 0.08
+version: 0.09
 author: []
 abstract: handle readelf's output with a class
 license: perl
@@ -17,13 +17,13 @@ recommends:
 provides:
   Parse::Readelf:
     file: lib/Parse/Readelf.pm
-    version: 0.08
+    version: 0.09
   Parse::Readelf::Debug::Info:
     file: lib/Parse/Readelf/Debug/Info.pm
-    version: 0.08
+    version: 0.09
   Parse::Readelf::Debug::Line:
     file: lib/Parse/Readelf/Debug/Line.pm
-    version: 0.08
+    version: 0.09
 generated_by: Module::Build version 0.33
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html

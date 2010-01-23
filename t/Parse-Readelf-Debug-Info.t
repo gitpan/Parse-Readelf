@@ -195,7 +195,7 @@ my $debug_info = undef;
 # arrays with results depending on input file:
 my @ids_matching__l_ = (0, 6, 7, 8);
 my @ids_matching_l_ = (0, 14, 15, 15);
-my @ids_matching_var = (0, 80, 85, 77);
+my @ids_matching_var = (0, 122, 128, 119);
 
 foreach my $format (1..3)
 {
