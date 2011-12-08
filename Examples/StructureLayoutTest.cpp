@@ -13,7 +13,7 @@
    compile, execute and get test data with
 
    @verbatim
-   g++ -g -W -Wall -c StructureLayoutTest.cpp && \
+   g++ -g -O2 -W -Wall -c StructureLayoutTest.cpp && \
    g++ -g -o StructureLayoutTest StructureLayoutTest.o && \
    ./StructureLayoutTest && \
    readelf --debug-dump=line,info --wide StructureLayoutTest \
@@ -74,6 +74,25 @@ class StructureWithUnion
         };
     };
 };
+class ClassWithInline
+{
+    Structure2 m_01_structure2;
+public:
+    void foo(long long p_long_long)
+        {
+            m_01_structure2.m_01_long_long = p_long_long;
+            Structure2 l_object2_foo = m_01_structure2;
+            std::cout << "sizeof(l_object2_foo) == "
+                      << sizeof(l_object2_foo) << "\n";
+        };
+    void bar(long long p_long_long);
+};
+inline void ClassWithInline::bar(long long p_long_long)
+{
+    m_01_structure2.m_01_long_long = p_long_long;
+    Structure2 l_object2_bar = m_01_structure2;
+    std::cout << "sizeof(l_object2_bar) == " << sizeof(l_object2_bar) << "\n";
+};
 
 int main()
 {
@@ -106,4 +125,7 @@ int main()
 	      << "sizeof(l_object4) == "   << sizeof(l_object4)   << "\n"
 	      << "sizeof(l_cvInt) == "     << sizeof(l_cvInt)     << "\n"
 	      << "sizeof(l_objectU) == "   << sizeof(l_objectU)   << "\n";
+    ClassWithInline l_objectI;
+    l_objectI.foo(42);
+    l_objectI.bar(42);
 }

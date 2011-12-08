@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.09';
+our $VERSION = '0.11';
 
 use Parse::Readelf::Debug::Line;
 
@@ -319,8 +319,12 @@ currently ignored.
 
 our @re_item_start =
     ( undef, undef,
-      '^\s*<(\d+)><([0-9A-F]+)>:\s+abbrev\s+number:\s+(\d+)\s+\((.*)\)'
+      qr'^\s*<(\d+)><([0-9A-F]+)>:\s+abbrev\s+number:\s+(\d+)\s+\((.*)\)'i
     );
+
+our @re_abstract_origin =
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_abstract_origin\s*:\s+<(?:0x)?([0-9A-F]+)>)i );
 
 our @re_bit_offset =
     ( undef, undef,
@@ -340,7 +344,7 @@ our @re_comp_dir =
 
 our @re_const_value =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_const_value\s*:\s+([-\d]+))i );
+      qr{^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_const_value\s*:\s+([-\d]+|\*|ALL|\(indirect string, .*)}i );
 
 our @re_decl_file =
     ( undef, undef,
@@ -356,7 +360,7 @@ our @re_declaration =
 
 our @re_encoding =
     ( undef, undef,
-      '^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_encoding\s*:\s+\d+\s+\(([a-z ]+)\)' );
+      qr'^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_encoding\s*:\s+\d+\s+\(([a-z ]+)\)'i );
 
 our @re_external =
     ( undef, undef,
@@ -364,7 +368,7 @@ our @re_external =
 
 our @re_language =
     ( undef, undef,
-      '^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_language\s*:\s+\d+\s+\((.+)\)' );
+      qr'^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_language\s*:\s+\d+\s+\((.+)\)'i );
 
 our @re_location =
     ( undef, undef,
@@ -382,7 +386,7 @@ our @re_name_tag =
 
 our @re_producer =
     ( undef, undef,
-      '^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_producer\s*:(?:\s+\(.+\):)?\s+(.+)' );
+      qr'^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_producer\s*:(?:\s+\(.+\):)?\s+(.+)'i );
 
 our @re_specification =
     ( undef, undef,
@@ -396,9 +400,24 @@ our @re_upper_bound =
     ( undef, undef,
       qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_upper_bound\s*:\s+(\d+))i );
 
+use constant IGNORED_ATTRIBUTES => qw(accessibility
+				      artificial
+				      encoding
+				      entry_pc
+				      high_pc
+				      low_pc
+				      macro_info
+				      MIPS_linkage_name
+				      producer
+				      ranges
+				      sibling
+				      stmt_list);
 our @re_ignored_attributes =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_(?:artificial|(?:entry|high|low)_pc|macro_info|ranges|sibling|stmt_list|location\s*:\s*0x))i );
+      '^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_(?:(?:'.
+      join('|', IGNORED_ATTRIBUTES).
+      ')\b|location\s*:\s*0x)'
+    );
 
 our @tag_needs_attributes =
     (
@@ -558,6 +577,16 @@ sub new($$;$)
 	    # check if item is complete and store it:
 	    if (defined $item)
 	    {
+		# special handling of indirect variables of
+		# non-optimised inline functions:
+		if (defined $item->{abstract_origin}  and
+		    (defined $item->{type_tag} eq 'DW_TAG_variable'  ))
+		{
+		    warn "abstract variable";
+		    $item = undef;
+		    next;
+		}
+		# normal handling:
 		foreach (@$needed_attributes)
 		{
 		    next if defined $item->{$_};
@@ -601,7 +630,7 @@ sub new($$;$)
 		# in another node:
 		my $name = $item->{name};
 		if (not defined $name  and
-		    $item->{type_tag} =~ m/^DW_TAG_(?:class|structure)_type$/
+		    $item->{type_tag} =~ m/^DW_TAG_(?:class|structure|union)_type$/
 		    and
 		    defined $item->{specification}  and
 		    defined $self{item_map}->{$item->{specification}})
@@ -662,6 +691,8 @@ sub new($$;$)
 	}
 	elsif (not defined $item)
 	{ next }
+	elsif (m/$re_abstract_origin[$version]/)
+	{ $item->{abstract_origin} = $1 }
 	elsif (m/$re_bit_offset[$version]/)
 	{ $item->{bit_offset} = $1 }
 	elsif (m/$re_bit_size[$version]/)
@@ -698,9 +729,9 @@ sub new($$;$)
 	{ $item->{type} = $1 }
 	elsif (m/$re_upper_bound[$version]/)
 	{ $item->{upper_bound} = $1 }
-	elsif (m/$re_ignored_attributes[$version]/)
+	elsif (m/$re_ignored_attributes[$version]/i)
 	{}
-	elsif (m/^\s*(?:<[0-9A-F ]+>)?\s*(DW_AT_\w+)\s/)
+	elsif (m/^\s*(?:<[0-9A-F ]+>)?\s*(DW_AT_\w+)\s*:/i)
 	{
 	    chomp;
 	    carp('unknown attribute type ', $1, ' found at position ',
@@ -811,7 +842,7 @@ sub item_ids_matching($$;$)
 	next if defined $_->{name}  and  $_->{name} !~ m/$re_name/;
 	next if (not defined $_->{name}  and
 		 $re_name ne ''  and
-		 not ($_->{type_tag} =~ m/^DW_TAG_(?:class|structure)_type$/
+		 not ($_->{type_tag} =~ m/^DW_TAG_(?:class|structure|union)_type$/
 		      and
 		      defined $_->{specification}  and
 		      $this->{item_map}->{$_->{specification}}->{name}
@@ -900,7 +931,7 @@ sub structure_layout($$;$)
 	my $name = $item->{name};
 	if (not defined $name  and
 	    $level < 1 and
-	    $item->{type_tag} =~ m/^DW_TAG_(?:class|structure)_type$/  and
+	    $item->{type_tag} =~ m/^DW_TAG_(?:class|structure|union)_type$/  and
 	    defined $item->{specification}  and
 	    defined $this->{item_map}->{$item->{specification}})
 	{
@@ -992,7 +1023,8 @@ sub structure_layout($$;$)
 	    @sub_layout = $this->structure_layout($item->{type}, $offset);
 
 	    # for templates use shortcut to their specification:
-	    if ($type->{type_tag} =~ m/^DW_TAG_(?:class|structure)_type$/  and
+	    if ($type->{type_tag} =~ m/^DW_TAG_(?:class|structure|union)_type$/
+		and
 		defined $type->{specification})
 	    { $type = $this->{item_map}->{$type->{specification}} }
 
@@ -1055,7 +1087,7 @@ sub structure_layout($$;$)
 	}
 
 	# for unnamed singular substructures eliminate singular level:
-	if ($item->{type_tag} =~ m/^DW_TAG_(?:class|structure)_type$/  and
+	if ($item->{type_tag} =~ m/^DW_TAG_(?:class|structure|union)_type$/  and
 	    not $name  and
 	    not $type_name  and
 	    0 == @bit_data)
@@ -1107,11 +1139,11 @@ man page
 
 =head1 AUTHOR
 
-Thomas Dorner, E<lt>dorner (AT) pause.orgE<gt>
+Thomas Dorner, E<lt>dorner (AT) cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007-2010 by Thomas Dorner
+Copyright (C) 2007-2011 by Thomas Dorner
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.6.1 or,

@@ -31,7 +31,9 @@ my %output = (StructureLayoutTest =>
 	       '^sizeof\(l_object3\) == \d{1,2}$',
 	       '^sizeof\(l_object4\) == \d{1,2}$',
 	       '^sizeof\(l_cvInt\) == \d{1,2}$',
-	       '^sizeof\(l_objectU\) == \d{1,2}$']);
+	       '^sizeof\(l_objectU\) == \d{1,2}$',
+	       '^sizeof\(l_object2_foo\) == \d{1,2}$',
+	       '^sizeof\(l_object2_bar\) == \d{1,2}$']);
 foreach my $base (keys %source)
 {
  FORMAT:
@@ -76,6 +78,10 @@ foreach my $base (keys %source)
 		or  die  "$0: can't run '$command': $!\n";
 	    while (<PROG>)
 	    {
+ unless (defined $output{$base}->[$. - 1])
+{
+    die "$base,$output{$base},$.";
+}
 		my $match = $output{$base}->[$. - 1];
 		unless (m/$match/)
 		{

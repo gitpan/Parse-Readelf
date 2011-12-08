@@ -55,7 +55,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.09';
+our $VERSION = '0.11';
 
 #########################################################################
 
@@ -684,11 +684,11 @@ L<Parse::Readelf> and the C<readelf> man page
 
 =head1 AUTHOR
 
-Thomas Dorner, E<lt>dorner (AT) pause.orgE<gt>
+Thomas Dorner, E<lt>dorner (AT) cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007-2009 by Thomas Dorner
+Copyright (C) 2007-2011 by Thomas Dorner
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.6.1 or,

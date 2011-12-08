@@ -24,7 +24,7 @@ require_ok 'Parse::Readelf';
 
 #########################################################################
 # identical part of messages:
-my $re_msg_tail = qr/at .*Parse-Readelf\.t line \d{2,}$/;
+my $re_msg_tail = qr/at .*Parse-Readelf\.(?:t|pm) line \d{2,}$/;
 
 #########################################################################
 # prepare testing with recorded data:
@@ -33,8 +33,8 @@ $directories = '.' unless $directories;
 my $path = File::Spec->catpath($volume, $directories, '');
 {
     no warnings 'once';
-    $Parse::Readelf::Debug::Line::command = 'cat';
-    $Parse::Readelf::Debug::Info::command = 'cat';
+    $Parse::Readelf::Debug::Line::command = $^O eq 'MSWin32' ? 'type' : 'cat';
+    $Parse::Readelf::Debug::Info::command = $^O eq 'MSWin32' ? 'type' : 'cat';
 }
 
 #########################################################################

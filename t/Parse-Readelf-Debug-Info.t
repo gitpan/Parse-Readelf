@@ -10,7 +10,7 @@
 
 use strict;
 
-use Test::More tests => 96;
+use Test::More tests => 111;
 
 use File::Spec;
 
@@ -23,7 +23,7 @@ require_ok 'Parse::Readelf::Debug::Info';
 
 #########################################################################
 # identical part of messages:
-my $re_msg_tail = qr/at .*Parse-Readelf-Debug-Info\.t line \d{2,}$/;
+my $re_msg_tail = qr/at .*Parse-Readelf-Debug-Info\.(?:t|pm) line \d{2,}$/;
 
 #########################################################################
 # import tests:
@@ -118,9 +118,9 @@ $directories = '.' unless $directories;
 my $path = File::Spec->catpath($volume, $directories, '');
 {
     no warnings 'once';
-    $Parse::Readelf::Debug::Line::command = 'cat';
+    $Parse::Readelf::Debug::Line::command = $^O eq 'MSWin32' ? 'type' : 'cat';
 }
-$Parse::Readelf::Debug::Info::command = 'cat';
+$Parse::Readelf::Debug::Info::command = $^O eq 'MSWin32' ? 'type' : 'cat';
 
 #########################################################################
 # failing tests:
@@ -193,11 +193,12 @@ my $filepath = undef;
 my $debug_info = undef;
 
 # arrays with results depending on input file:
-my @ids_matching__l_ = (0, 6, 7, 8);
-my @ids_matching_l_ = (0, 14, 15, 15);
-my @ids_matching_var = (0, 122, 128, 119);
+my @ids_matching__l_   = (0,   6,   7,   8,  11);
+my @ids_matching__l_o2 = (0,   2,   2,   2,   4);
+my @ids_matching_l_    = (0,  14,  15,  15,  18);
+my @ids_matching_var   = (0, 122, 128, 119, 124);
 
-foreach my $format (1..3)
+foreach my $format (1..4)
 {
     $filepath =
 	File::Spec->catfile($path, 'data', 'debug_info_'.$format.'.lst');
@@ -220,7 +221,8 @@ foreach my $format (1..3)
        $ids_matching__l_[$format].' IDs matching "^l_"');
 
     @item_ids = $debug_info->item_ids_matching('^l_object2');
-    is(@item_ids, 2, '2 IDs matching "^l_object2"');
+    is(@item_ids, $ids_matching__l_o2[$format],
+       $ids_matching__l_o2[$format].' IDs matching "^l_object2"');
     my $l_object2b = $item_ids[ $item_ids[0] eq $l_object2a ? 1 : 0 ];
     isnt($l_object2a, $l_object2b, '2 l_object2N distinguished');
 

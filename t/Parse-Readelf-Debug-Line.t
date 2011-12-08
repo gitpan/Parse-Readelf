@@ -23,7 +23,7 @@ require_ok 'Parse::Readelf::Debug::Line';
 
 #########################################################################
 # identical part of messages:
-my $re_msg_tail = qr/at .*Parse-Readelf-Debug-Line\.t line \d{2,}$/;
+my $re_msg_tail = qr/at .*Parse-Readelf-Debug-Line\.(?:t|pm) line \d{2,}$/;
 use constant MODULE => 'StructureLayoutTest.cpp';
 
 #########################################################################
@@ -139,7 +139,7 @@ test_globals('<empty import list>',
 my ($volume, $directories, ) = File::Spec->splitpath($0);
 $directories = '.' unless $directories;
 my $path = File::Spec->catpath($volume, $directories, '');
-$Parse::Readelf::Debug::Line::command = 'cat';
+$Parse::Readelf::Debug::Line::command = $^O eq 'MSWin32' ? 'type' : 'cat';
 
 #########################################################################
 # failing tests:

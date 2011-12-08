@@ -19,5 +19,6 @@ t/data/broken_data.lst
 t/data/debug_info_1.lst
 t/data/debug_info_2.lst
 t/data/debug_info_3.lst
+t/data/debug_info_4.lst
 t/pod-coverage.t
 t/pod.t

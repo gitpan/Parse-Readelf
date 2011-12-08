@@ -1,4 +1,4 @@
-Parse-Readelf version 0.09
+Parse-Readelf version 0.11
 ==========================
 
 Parse::Readelf is a module to parse the output of readelf from the GNU

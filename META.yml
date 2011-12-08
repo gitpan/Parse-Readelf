@@ -1,30 +1,32 @@
 ---
 name: Parse-Readelf
-version: 0.09
-author: []
-abstract: handle readelf's output with a class
+version: 0.11
+author:
+abstract: "handle readelf's output with a class"
 license: perl
-resources:
-  license: http://dev.perl.org/licenses/
 requires:
   Carp: 0
   File::Spec: 0
   Test::More: 0
-  perl: 5.6.1
+  perl: v5.6.1
 recommends:
   Test::Pod: 0
   Test::Pod::Coverage: 0
-provides:
-  Parse::Readelf:
-    file: lib/Parse/Readelf.pm
-    version: 0.09
-  Parse::Readelf::Debug::Info:
-    file: lib/Parse/Readelf/Debug/Info.pm
-    version: 0.09
-  Parse::Readelf::Debug::Line:
-    file: lib/Parse/Readelf/Debug/Line.pm
-    version: 0.09
-generated_by: Module::Build version 0.33
+configure_requires:
+  Module::Build: 0.340201
+generated_by: Module::Build version 0.340201
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
+provides:
+  Parse::Readelf:
+    file: lib/Parse/Readelf.pm
+    version: 0.11
+  Parse::Readelf::Debug::Info:
+    file: lib/Parse/Readelf/Debug/Info.pm
+    version: 0.11
+  Parse::Readelf::Debug::Line:
+    file: lib/Parse/Readelf/Debug/Line.pm
+    version: 0.11
+resources:
+  license: http://dev.perl.org/licenses/
