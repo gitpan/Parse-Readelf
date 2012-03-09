@@ -24,7 +24,7 @@ require_ok 'Parse::Readelf';
 
 #########################################################################
 # identical part of messages:
-my $re_msg_tail = qr/at .*Parse-Readelf\.(?:t|pm) line \d{2,}$/;
+my $re_msg_tail = qr/at .*Parse-Readelf\.(?:t|pm) line \d{2,}\.?$/;
 
 #########################################################################
 # prepare testing with recorded data:

@@ -6,7 +6,7 @@
 # information in files ending with ".lst").
 #
 # Author: Thomas Dorner
-# Copyright: (C) 2007-2009 by Thomas Dorner (Artistic License)
+# Copyright: (C) 2007-2012 by Thomas Dorner (Artistic License)
 
 use strict;
 use warnings;
@@ -19,7 +19,11 @@ BEGIN {
     my $libpath = File::Spec->catpath(@split_path[0..1]);
     $libpath = File::Spec->catdir($libpath, '..', 'lib');
     $libpath = File::Spec->rel2abs($libpath);
-    unshift @INC, $libpath if -d $libpath;
+    if (-d $libpath)
+    {
+	print 'adding ', $libpath, ' to @INC', "\n";
+	unshift @INC, $libpath;
+    }
     require Parse::Readelf;
 };
 

@@ -23,7 +23,7 @@ require_ok 'Parse::Readelf::Debug::Info';
 
 #########################################################################
 # identical part of messages:
-my $re_msg_tail = qr/at .*Parse-Readelf-Debug-Info\.(?:t|pm) line \d{2,}$/;
+my $re_msg_tail = qr/at .*Parse-Readelf-Debug-Info\.(?:t|pm) line \d{2,}\.?$/;
 
 #########################################################################
 # import tests:

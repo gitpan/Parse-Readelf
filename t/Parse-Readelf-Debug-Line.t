@@ -23,7 +23,7 @@ require_ok 'Parse::Readelf::Debug::Line';
 
 #########################################################################
 # identical part of messages:
-my $re_msg_tail = qr/at .*Parse-Readelf-Debug-Line\.(?:t|pm) line \d{2,}$/;
+my $re_msg_tail = qr/at .*Parse-Readelf-Debug-Line\.(?:t|pm) line \d{2,}\.?$/;
 use constant MODULE => 'StructureLayoutTest.cpp';
 
 #########################################################################

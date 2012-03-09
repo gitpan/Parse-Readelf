@@ -1,6 +1,6 @@
 ---
 name: Parse-Readelf
-version: 0.11
+version: 0.12
 author:
 abstract: "handle readelf's output with a class"
 license: perl
@@ -21,12 +21,12 @@ meta-spec:
 provides:
   Parse::Readelf:
     file: lib/Parse/Readelf.pm
-    version: 0.11
+    version: 0.12
   Parse::Readelf::Debug::Info:
     file: lib/Parse/Readelf/Debug/Info.pm
-    version: 0.11
+    version: 0.12
   Parse::Readelf::Debug::Line:
     file: lib/Parse/Readelf/Debug/Line.pm
-    version: 0.11
+    version: 0.12
 resources:
   license: http://dev.perl.org/licenses/
