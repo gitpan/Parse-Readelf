@@ -1,5 +1,8 @@
 Revision history for Perl extension Parse::Readelf.
 
+0.13	(12.03.2012)
+	fixed bug with C typedefs (66776)
+
 0.12	(09.03.2012)
 	fixed tests for Carp >= 1.25
 

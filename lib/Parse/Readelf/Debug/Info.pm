@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 use Parse::Readelf::Debug::Line;
 
@@ -424,13 +424,14 @@ our @tag_needs_attributes =
      undef,
      undef,
      {
+      # Note that in combination with a C typedef the name is often missing!
       DW_TAG_array_type => [ qw(type) ],
       DW_TAG_base_type => [ qw(name) ],
       DW_TAG_class_type => [],
       DW_TAG_const_type => [ qw(type) ],
       DW_TAG_compile_unit => [ qw(name) ],
       DW_TAG_enumerator => [ qw(name) ],
-      DW_TAG_enumeration_type => [ qw(name byte_size) ],
+      DW_TAG_enumeration_type => [ qw(byte_size) ],
       DW_TAG_formal_parameter => [ qw(name type) ],
       DW_TAG_member => [ qw(name type member_location) ],
       DW_TAG_pointer_type => [ qw(byte_size) ],
@@ -439,7 +440,7 @@ our @tag_needs_attributes =
       DW_TAG_structure_type => [],
       DW_TAG_subrange_type => [ qw(upper_bound) ],
       DW_TAG_typedef => [ qw(name type) ],
-      DW_TAG_union_type => [ qw(name byte_size) ],
+      DW_TAG_union_type => [ qw(byte_size) ],
       DW_TAG_variable => [ qw(name type) ],
       DW_TAG_volatile_type => [ qw(type) ]
      }
@@ -1123,8 +1124,10 @@ __END__
 
 =head1 KNOWN BUGS
 
-For references the size of the referenced data is shown, not the
-internal size of the reference self.  This is a feature.
+For references as well as pointers outside of structures the size of
+the referenced data is shown, not the internal size of the reference
+self.  This is a feature.  (Note that this means that pointers to
+functions outside of structures always have the size 0.)
 
 Only Dwarf version 2 is supported.  Please contact the author for
 other versions and provide some example C<readelf> outputs.
@@ -1143,7 +1146,7 @@ Thomas Dorner, E<lt>dorner (AT) cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007-2011 by Thomas Dorner
+Copyright (C) 2007-2012 by Thomas Dorner
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.6.1 or,

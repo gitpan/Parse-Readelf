@@ -4,7 +4,7 @@
    This is the source used to create the newest version (highest version
    number N) of the test data t/data/debug_info_N.lst.
 
-   Copyright (C) 2006-2009 by Thomas Dorner
+   Copyright (C) 2006-2012 by Thomas Dorner
 
    @author Thomas Dorner
 
@@ -25,6 +25,9 @@
    alternative: objdump -W -w StructureLayoutTest > StructureLayoutTest.debug
 */
 #include <iostream>
+
+struct Structure1; // forward reference
+typedef struct Structure1* Ptr2Structure1;
 
 struct Structure1
 {
@@ -97,6 +100,7 @@ inline void ClassWithInline::bar(long long p_long_long)
 int main()
 {
     Structure1 l_object1;
+    Ptr2Structure1 l_pointer1 = &l_object1;
     Structure2 l_object2a;
     Structure2 l_object2b;
     const Structure2& l_cObject2b = l_object2b;
@@ -113,10 +117,11 @@ int main()
     } l_object4;
     volatile const int& l_cvInt = l_object4.m_01_int;
     l_object4.m_string = "Teststring";
-    StructureWithUnion l_objectU;
+    static StructureWithUnion l_objectU;
     std::cout << "sizeof(Structure1) == "  << sizeof(Structure1)  << "\n"
 	      << "offsetof(Structure1, m_04_pointer) == "
 	      <<  offsetof(Structure1, m_04_pointer)              << "\n"
+	      << "sizeof(l_pointer1) == "  << sizeof(l_pointer1)  << "\n"
 	      << "sizeof(l_object1) == "   << sizeof(l_object1)   << "\n"
 	      << "sizeof(l_object2a) == "  << sizeof(l_object2a)  << "\n"
 	      << "sizeof(l_object2b) == "  << sizeof(l_object2b)  << "\n"

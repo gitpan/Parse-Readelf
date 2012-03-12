@@ -10,7 +10,7 @@
 
 use strict;
 
-use Test::More tests => 111;
+use Test::More tests => 135;
 
 use File::Spec;
 
@@ -193,12 +193,12 @@ my $filepath = undef;
 my $debug_info = undef;
 
 # arrays with results depending on input file:
-my @ids_matching__l_   = (0,   6,   7,   8,  11);
-my @ids_matching__l_o2 = (0,   2,   2,   2,   4);
-my @ids_matching_l_    = (0,  14,  15,  15,  18);
-my @ids_matching_var   = (0, 122, 128, 119, 124);
+my @ids_matching__l_   = (6,   6,   7,   8,  11,  12);
+my @ids_matching__l_o2 = (2,   2,   2,   2,   4,   4);
+my @ids_matching_l_    = (6,  14,  15,  15,  18,  19);
+my @ids_matching_var   = (7, 122, 128, 119, 124, 122);
 
-foreach my $format (1..4)
+foreach my $format (0..5)
 {
     $filepath =
 	File::Spec->catfile($path, 'data', 'debug_info_'.$format.'.lst');
@@ -212,9 +212,6 @@ foreach my $format (1..4)
 
     @item_ids = $debug_info->item_ids('object_x');
     is(@item_ids, 0, '0 object_x found');
-
-    @item_ids = $debug_info->item_ids('npos');
-    is(@item_ids, 3, '3 npos found');
 
     @item_ids = $debug_info->item_ids_matching('^l_');
     is(@item_ids, $ids_matching__l_[$format],
@@ -238,46 +235,54 @@ foreach my $format (1..4)
     is(@item_ids, $ids_matching_var[$format],
        $ids_matching_var[$format].' variable IDs');
 
-    my @structure_layout_1 = $debug_info->structure_layout($l_object2a);
-    my @structure_layout_2 = $debug_info->structure_layout($l_object2b);
-    $structure_layout_2[0][1] = 'l_object2a';
-    $structure_layout_2[0][4][2] = $structure_layout_1[0][4][2];
-    is_deeply(\@structure_layout_1, \@structure_layout_2, 'l_object2N similar');
-
-    @item_ids = $debug_info->item_ids('Structure1');
-    is(@item_ids, 1, '1 Structure1 found');
-    my $structure1 = $item_ids[0];
-
-    @structure_layout_1 = $debug_info->structure_layout($structure1);
+    # tests not feasible for special C test source:
+    if ($format > 0)
     {
-	no warnings 'once';
-	$Parse::Readelf::Debug::Info::display_nested_items = 1;
-    }
-    @structure_layout_2 = $debug_info->structure_layout($structure1);
-    isnt(@structure_layout_1, @structure_layout_2,
-	 'display_nested_items makes a difference');
-    {
-	no warnings 'once';
-	$Parse::Readelf::Debug::Info::display_nested_items = 0;
-    }
+	@item_ids = $debug_info->item_ids('npos');
+	is(@item_ids, 3, '3 npos found');
 
-    # older code paths (removed in later versions):
-    if ($format <= 2)
-    {
-	@item_ids = $debug_info->item_ids('money_base');
-	is(@item_ids, 2, '2 money_base found');
-	@structure_layout_1 = $debug_info->structure_layout($item_ids[1]);
-	is($structure_layout_1[0][1], 'money_base', 'money_base is ok');
-    }
+	my @structure_layout_1 = $debug_info->structure_layout($l_object2a);
+	my @structure_layout_2 = $debug_info->structure_layout($l_object2b);
+	$structure_layout_2[0][1] = 'l_object2a';
+	$structure_layout_2[0][4][2] = $structure_layout_1[0][4][2];
+	is_deeply(\@structure_layout_1, \@structure_layout_2,
+		  'l_object2N similar');
 
-    # check newer code paths (e.g. TAGs added in later versions):
-    if ($format > 1)
-    {
-	@item_ids = $debug_info->item_ids('l_cvInt');
-	is(@item_ids, 1, '1 l_cvInt found');
-	@structure_layout_1 = $debug_info->structure_layout($item_ids[0]);
-	is($structure_layout_1[0][2], 'const volatile int&',
-	   'const volatile int& is ok');
+	@item_ids = $debug_info->item_ids('Structure1');
+	is(@item_ids, 1, '1 Structure1 found');
+	my $structure1 = $item_ids[0];
+
+	@structure_layout_1 = $debug_info->structure_layout($structure1);
+	{
+	    no warnings 'once';
+	    $Parse::Readelf::Debug::Info::display_nested_items = 1;
+	}
+	@structure_layout_2 = $debug_info->structure_layout($structure1);
+	isnt(@structure_layout_1, @structure_layout_2,
+	     'display_nested_items makes a difference');
+	{
+	    no warnings 'once';
+	    $Parse::Readelf::Debug::Info::display_nested_items = 0;
+	}
+
+	# older code paths (removed in later versions):
+	if ($format <= 2)
+	{
+	    @item_ids = $debug_info->item_ids('money_base');
+	    is(@item_ids, 2, '2 money_base found');
+	    @structure_layout_1 = $debug_info->structure_layout($item_ids[1]);
+	    is($structure_layout_1[0][1], 'money_base', 'money_base is ok');
+	}
+
+	# check newer code paths (e.g. TAGs added in later versions):
+	if ($format > 1)
+	{
+	    @item_ids = $debug_info->item_ids('l_cvInt');
+	    is(@item_ids, 1, '1 l_cvInt found');
+	    @structure_layout_1 = $debug_info->structure_layout($item_ids[0]);
+	    is($structure_layout_1[0][2], 'const volatile int&',
+	       'const volatile int& is ok');
+	}
     }
 }
 

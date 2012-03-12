@@ -10,7 +10,7 @@
 
 use strict;
 
-use Test::More tests => 96;
+use Test::More tests => 134;
 
 use File::Spec;
 use File::Temp 'tempfile';
@@ -85,7 +85,7 @@ like($@,
 
 #########################################################################
 # first "real" tests:
-my $filepath = File::Spec->catfile($path, 'data', 'debug_info_1.lst');
+my $filepath = File::Spec->catfile($path, 'data', 'debug_info_4.lst');
 my $readelf_data = new Parse::Readelf($filepath);
 is(ref($readelf_data), 'Parse::Readelf', 'created Parse::Readelf object');
 
@@ -126,8 +126,8 @@ check_stdout('l_object3',
 check_stdout('l_object4',
 	     sub { $readelf_data->print_structure_layout('l_object4'); },
 	     qr'^OF\s+STRUCTURE\s+TYPE \(SIZE\)\s+$',
-	     qr'^00\s+l_object4\s+._85 \(24\)\s+$',
-	     qr'^00\s+._85\s+\(24\)\s+$',
+	     qr'^00\s+l_object4\s+<anonymous struct> \(24\)\s+$',
+	     qr'^00\s+<anonymous struct>\s+\(24\)\s+$',
 	     qr'^00\s+m_00_int\s+int \(4\)\s+$',
 	     qr'^08\s+m_string\s+string \(8\)\s+$',
 	     qr'^16\s+m_01_int\s+int \(4\)\s+$'
@@ -152,8 +152,8 @@ check_stdout
      qr'^35.2\s+m_09_02_3_char_bits\s+unsigned char \(3 in 1\)\s+$',
      qr'^35.5\s+m_09_01_2_char_bits\s+unsigned char \(2 in 1\)\s+$',
      qr'^35.7\s+m_09_00_1_char_bit\s+unsigned char \(1 in 1\)\s+$',
-     qr'^36\s+m_10_substructure\s+\._84 \(4\)\s+$',
-     qr'^36\s+\._84\s+\(4\)\s+$',
+     qr'^36\s+m_10_substructure\s+<anonymous struct> \(4\)\s+$',
+     qr'^36\s+<anonymous struct>\s+\(4\)\s+$',
      qr'^36\s+m_10_00_char\s+char \(1\)\s+$',
      qr'^38\s+m_10_01_short\s+short int \(2\)\s+$',
      qr'^40\s+m_11_final_char\s+char \(1\)\s+$'
@@ -162,7 +162,7 @@ check_stdout
 check_stdout('^l_',
 	     sub { $readelf_data->print_structure_layout('^l_'); },
 	     qr'^OFFSE\s+STRUCTURE\s+TYPE \(SIZE\)\s+$',
-	     (qr'^00') x 4,
+	     (qr'^00') x 5,
 	     qr'^08',
 	     (qr'^[1-3][024]\s') x 4,
 	     (qr'^32\.\d{2}\s') x 3,
@@ -176,10 +176,39 @@ check_stdout('^l_',
 	     (qr'^00') x 3,
 	     qr'^08',
 	     (qr'^00') x 3,
+	     qr'^08',
+	     (qr'^00') x 3,
+	     qr'^08',
+	     (qr'^00') x 3,
 	     qr'^02',
 	     (qr'^00') x 3,
 	     qr'^08',
-	     qr'^16'
+	     qr'^16',
+	     (qr'^00') x 5,
+	     qr'^08',
+	     (qr'^00') x 4,
+	     qr'^00\.0',
+	     qr'^00\.12',
+	     (qr'^02') x 4,
+	     qr'^04',
+	     (qr'^08') x 3,
+	     qr'^12\.8',
+	    );
+
+#########################################################################
+# some more tests for special C features:
+$filepath = File::Spec->catfile($path, 'data', 'debug_info_0.lst');
+$readelf_data = new Parse::Readelf($filepath);
+is(ref($readelf_data), 'Parse::Readelf', 'created 2nd Parse::Readelf object');
+
+check_stdout('l_object4',
+	     sub { $readelf_data->print_structure_layout('l_objectAT'); },
+	     qr'^O\s+STRUCTURE\s+TYPE \(SIZE\)\s+$',
+	     qr'^0\s+l_objectATE\s+AnonTypedefEnum \(4\)\s+$',
+	     qr'^0\s+AnonTypedefEnum\s+\(4\)\s+$',
+	     qr'^0\s+\(4\)\s+$',
+	     qr'^0\s+l_objectATU\s+AnonTypedefUnion \(8\)\s+$',
+	     qr'^0\s+AnonTypedefUnion\s+\(8\)\s+$'
 	    );
 
 #########################################################################
