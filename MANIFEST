@@ -25,3 +25,4 @@ t/data/debug_info_4.lst
 t/data/debug_info_5.lst
 t/pod-coverage.t
 t/pod.t
+META.json

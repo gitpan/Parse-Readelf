@@ -50,10 +50,10 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 use Parse::Readelf::Debug::Line;
-use Parse::Readelf::Debug::Info;
+use Parse::Readelf::Debug::Info ':constants';
 
 #########################################################################
 
@@ -210,14 +210,16 @@ sub print_structure_layout($$;$)
 	(1, 1, 0, 1);
     foreach (@layouts)
     {
-	my $width = length($_->[1]) + 2 * $_->[0];
+	my $width = length($_->[$NAME]) + 2 * $_->[$LEVEL];
 	$level_name_width = $width if $level_name_width < $width;
-        $offset_width = length($_->[5]) if $offset_width < length($_->[5]);
-        $bit_offset_width = length($_->[7]) + 1
-	    if defined $_->[7]  and  $bit_offset_width < length($_->[7]) + 1;
-	$width = $_->[2] ne '' ? length($_->[2]) + 3 : 2;
-	$width += length($_->[3]);
-	$width += length(defined $_->[6]) + 4 if defined $_->[6];
+        $offset_width = length($_->[$OFFSET])
+	    if $offset_width < length($_->[$OFFSET]);
+        $bit_offset_width = length($_->[$BITOFFSET]) + 1
+	    if  defined $_->[$BITOFFSET]  and
+		$bit_offset_width < length($_->[$BITOFFSET]) + 1;
+	$width = $_->[$TYPE] ne '' ? length($_->[$TYPE]) + 3 : 2;
+	$width += length($_->[$SIZE]);
+	$width += length(defined $_->[$BITSIZE]) + 4 if defined $_->[$BITSIZE];
 	$type_width = $width if $width > $type_width;
     }
 
@@ -230,20 +232,23 @@ sub print_structure_layout($$;$)
     foreach (@layouts)
     {
 	my $type_size = sprintf("%s(%s%d)",
-				($_->[2] ne '' ? $_->[2].' ' : ''),
-				(defined $_->[6] ? $_->[6].' in ' : ''),
-				$_->[3]);
+				($_->[$TYPE] ne '' ? $_->[$TYPE].' ' : ''),
+				(defined $_->[$BITSIZE]
+				 ? $_->[$BITSIZE].' in ' : ''),
+				$_->[$SIZE]);
 	my $location = '';
-	if ($print_location  and  defined $_->[4])
+	if ($print_location  and  defined $_->[$LOCATION])
 	{
 	    $location =
-		$this->{line_info}->file($_->[4]->[0], $_->[4]->[1])
-		    . ':' . $_->[4]->[2];
+		$this->{line_info}->file($_->[$LOCATION]->[0],
+					 $_->[$LOCATION]->[1])
+		    . ':' . $_->[$LOCATION]->[2];
 	}
 	printf("%0*d%-*s   %-*s   %-*s   %s\n",
-	       $offset_width, $_->[5],
-	       $bit_offset_width, (defined $_->[7] ? '.'.$_->[7] : ''),
-	       $level_name_width, ('  ' x $_->[0]) . $_->[1],
+	       $offset_width, $_->[$OFFSET],
+	       $bit_offset_width, (defined $_->[$BITOFFSET]
+				   ? '.'.$_->[$BITOFFSET] : ''),
+	       $level_name_width, ('  ' x $_->[$LEVEL]) . $_->[$NAME],
 	       $type_width, $type_size,
 	       $location);
     }

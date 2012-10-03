@@ -1,0 +1,56 @@
+{
+   "abstract" : "handle readelf's output with a class",
+   "author" : [
+      "unknown"
+   ],
+   "dynamic_config" : 1,
+   "generated_by" : "Module::Build version 0.38, CPAN::Meta::Converter version 2.110440",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Parse-Readelf",
+   "prereqs" : {
+      "configure" : {
+         "requires" : {
+            "Module::Build" : "0.38"
+         }
+      },
+      "runtime" : {
+         "recommends" : {
+            "Test::Pod" : 0,
+            "Test::Pod::Coverage" : 0
+         },
+         "requires" : {
+            "Carp" : 0,
+            "File::Spec" : 0,
+            "Test::More" : 0,
+            "perl" : "v5.6.1"
+         }
+      }
+   },
+   "provides" : {
+      "Parse::Readelf" : {
+         "file" : "lib/Parse/Readelf.pm",
+         "version" : "0.14"
+      },
+      "Parse::Readelf::Debug::Info" : {
+         "file" : "lib/Parse/Readelf/Debug/Info.pm",
+         "version" : "0.14"
+      },
+      "Parse::Readelf::Debug::Line" : {
+         "file" : "lib/Parse/Readelf/Debug/Line.pm",
+         "version" : "0.14"
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "license" : [
+         "http://dev.perl.org/licenses/"
+      ]
+   },
+   "version" : "0.14"
+}

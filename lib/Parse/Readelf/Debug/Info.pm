@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 use Parse::Readelf::Debug::Line;
 
@@ -76,6 +76,8 @@ our @EXPORT = qw();
 our %EXPORT_TAGS =
     (command => [ qw($command) ],
      config => [ qw($display_nested_items $re_substructure_filter) ],
+     constants => [ qw($LEVEL $NAME $TYPE $SIZE $LOCATION $OFFSET
+		       $BITSIZE $BITOFFSET) ],
      fixed_regexps => [ qw($re_section_start
 			   $re_section_stop
 			   $re_dwarf_version) ],
@@ -151,6 +153,46 @@ standard strings as default.
 our $display_nested_items = 0;
 
 our $re_substructure_filter = '^string$';
+
+#########################################################################
+
+=head2 :constants
+
+The following constants can be used to access the elements of the
+result of the method L</"structure_layout"> (see below).
+
+=over
+
+=item I<$LEVEL>
+
+=item I<$NAME>
+
+=item I<$TYPE>
+
+=item I<$SIZE>
+
+=item I<$LOCATION>
+
+=item I<$OFFSET>
+
+=item I<$BITSIZE>
+
+=item I<$BITOFFSET>
+
+=back
+
+=cut
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+our $LEVEL     = 0;
+our $NAME      = 1;
+our $TYPE      = 2;
+our $SIZE      = 3;
+our $LOCATION  = 4;
+our $OFFSET    = 5;
+our $BITSIZE   = 6;
+our $BITOFFSET = 7;
 
 #########################################################################
 
@@ -882,16 +924,25 @@ sub item_ids_matching($$;$)
     This method returns the structure layout of a variable or data
     type with the given item ID (which can be found with the method
     L<"item_ids"> or L<"item_ids_matching">).  For each element of a
-    structure it returns a quintuple containing (in that order)
-    I<relative level>, I<name>, I<data type>, I<size> and I<offset>
-    allthough some of the information might be missing (which is
-    indicated by an empty string).  For bit fields two additional
-    fields are added: I<bit-size> and I<bit-offset> (either both are
-    defined or none at all).
+    structure it returns a sextuple containing (in that order)
+    I<relative level>, I<name>, I<data type>, I<size>, I<location in
+    source file> and I<offset> allthough some of the information might
+    be missing (which is indicated by an empty string).  For bit
+    fields two additional fields are added: I<bit-size> and
+    I<bit-offset> (either both are defined or none at all).
+
+    I<location in source file> is a triplet.  The first two elements
+    (object ID of module and source number) are needed to get the file
+    name from
+    L<Parse::Readelf::Debug::Line::file|Parse::Readelf::Debug::Line/file>.
+    The third is the line number within the source.
+
+    Note that named indices for the result are defined in the
+    L</":constants"> export (see above).
 
 =head3 returns:
 
-    The method returns an array of the quintuples described above.
+    The method returns an array of the sextuples described above.
 
 =cut
 
@@ -1066,11 +1117,12 @@ sub structure_layout($$;$)
 	{
 	    @sub_layout =
 		sort {
-		    $a->[5] <=> $b->[5]
+		    $a->[$OFFSET] <=> $b->[$OFFSET]
 			||
-			    (defined $a->[7]
-			     ? (defined $b->[7] ? $a->[7] <=> $b->[7] : 1)
-			     : (defined $b->[7] ? -1 : 0)
+			    (defined $a->[$BITOFFSET]
+			     ? (defined $b->[$BITOFFSET]
+				? $a->[$BITOFFSET] <=> $b->[$BITOFFSET] : 1)
+			     : (defined $b->[$BITOFFSET] ? -1 : 0)
 			    )
 			}
 		    @sub_layout;

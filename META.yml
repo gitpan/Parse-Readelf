@@ -1,32 +1,35 @@
 ---
-name: Parse-Readelf
-version: 0.13
-author:
 abstract: "handle readelf's output with a class"
+author:
+  - unknown
+build_requires: {}
+configure_requires:
+  Module::Build: 0.38
+dynamic_config: 1
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.110440'
 license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Parse-Readelf
+provides:
+  Parse::Readelf:
+    file: lib/Parse/Readelf.pm
+    version: 0.14
+  Parse::Readelf::Debug::Info:
+    file: lib/Parse/Readelf/Debug/Info.pm
+    version: 0.14
+  Parse::Readelf::Debug::Line:
+    file: lib/Parse/Readelf/Debug/Line.pm
+    version: 0.14
+recommends:
+  Test::Pod: 0
+  Test::Pod::Coverage: 0
 requires:
   Carp: 0
   File::Spec: 0
   Test::More: 0
   perl: v5.6.1
-recommends:
-  Test::Pod: 0
-  Test::Pod::Coverage: 0
-configure_requires:
-  Module::Build: 0.340201
-generated_by: Module::Build version 0.340201
-meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: 1.4
-provides:
-  Parse::Readelf:
-    file: lib/Parse/Readelf.pm
-    version: 0.13
-  Parse::Readelf::Debug::Info:
-    file: lib/Parse/Readelf/Debug/Info.pm
-    version: 0.13
-  Parse::Readelf::Debug::Line:
-    file: lib/Parse/Readelf/Debug/Line.pm
-    version: 0.13
 resources:
   license: http://dev.perl.org/licenses/
+version: 0.14
