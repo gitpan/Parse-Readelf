@@ -24,6 +24,7 @@
 
    alternative: objdump -W -w StructureLayoutTest > StructureLayoutTest.debug
 */
+#include <cstddef>
 #include <iostream>
 
 struct Structure1; // forward reference

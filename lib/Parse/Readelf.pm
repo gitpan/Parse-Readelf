@@ -50,7 +50,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 use Parse::Readelf::Debug::Line;
 use Parse::Readelf::Debug::Info ':constants';
@@ -241,7 +241,8 @@ sub print_structure_layout($$;$)
 	{
 	    $location =
 		$this->{line_info}->file($_->[$LOCATION]->[0],
-					 $_->[$LOCATION]->[1])
+					 $_->[$LOCATION]->[1],
+					 1)
 		    . ':' . $_->[$LOCATION]->[2];
 	}
 	printf("%0*d%-*s   %-*s   %-*s   %s\n",
@@ -281,7 +282,7 @@ Thomas Dorner, E<lt>dorner (AT) cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007-2011 by Thomas Dorner
+Copyright (C) 2007-2013 by Thomas Dorner
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.6.1 or,

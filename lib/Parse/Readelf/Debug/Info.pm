@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 use Parse::Readelf::Debug::Line;
 
@@ -80,20 +80,33 @@ our %EXPORT_TAGS =
 		       $BITSIZE $BITOFFSET) ],
      fixed_regexps => [ qw($re_section_start
 			   $re_section_stop
-			   $re_dwarf_version) ],
+			   $re_unit_offset
+			   $re_dwarf_version
+			   $re_unit_signature
+			   $re_type_offset) ],
      versioned_regexps => [ qw(@re_item_start
 			       @re_bit_offset
 			       @re_bit_size
 			       @re_byte_size
+			       @re_comp_dir
 			       @re_const_value
+			       @re_containing_type
 			       @re_decl_file
 			       @re_decl_line
+			       @re_declaration
+			       @re_encoding
 			       @re_external
+			       @re_language
+			       @re_linkage_name_tag
+			       @re_location
 			       @re_member_location
 			       @re_name_tag
+			       @re_producer
+			       @re_signature_tag
 			       @re_specification
 			       @re_type
 			       @re_upper_bound
+			       @re_ignored_attributes
 			       @tag_needs_attributes
 			       @ignored_tags) ]
     );
@@ -202,7 +215,7 @@ our $BITOFFSET = 7;
 
 =item I<$re_section_start>
 
-is the regular expression that recognises the start of the line debug
+is the regular expression that recognises the start of the info debug
 output of C<readelf>.
 
 =item I<$re_section_stop>
@@ -210,11 +223,33 @@ output of C<readelf>.
 is the regular expression that recognises the start of another debug
 output of C<readelf>.
 
+=item I<$re_unit_offset>
+
+is the regular expression that recognises the first line of a
+compilation unit in an info debug output of C<readelf>.  This line
+states the offset of the compilation unit itself.  So this offset must
+be a hexadecimal string which will (must) be stored in C<$1> without
+any leading C<0x>.  Usually it's 0 for the first unit.
+
 =item I<$re_dwarf_version>
 
-is the regular expression that recognises the Dwarf version line in a
-line debug output of C<readelf>.  The version number must be an
+is the regular expression that recognises the Dwarf version line in an
+info debug output of C<readelf>.  The version number must be an
 integer number which will (must) be stored in C<$1>.
+
+=item I<$re_unit_signature>
+
+is the regular expression that recognises the hexadecimal signature
+line at the start of a compilation unit in an info debug output of
+C<readelf>.  The signature ID must be a string which will (must) be
+stored in C<$1>.
+
+=item I<$re_type_offset>
+
+is the regular expression that recognises the type offset line at the
+start of a compilation unit in an info debug output of C<readelf>.
+The offset must be a string which will (must) be stored in C<$1>
+without any leading C<0x>.
 
 =back
 
@@ -223,12 +258,18 @@ integer number which will (must) be stored in C<$1>.
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 our $re_section_start =
-    qr(^The section \.debug_info contains:|^Contents of the \.debug_info section:);
+    qr(^The section \.debug_info contains:|^Contents of the \.debug_(?:info|types) section:);
 
 our $re_section_stop =
     qr(^The section \.debug_.* contains:|^Contents of the \.debug_.* section:);
 
+our $re_unit_offset = qr(^\s*Compilation Unit\s.*\soffset\s+(?:0x)?([0-9a-f]+));
+
 our $re_dwarf_version = qr(^\s*Version:\s+(\d+)\s*$);
+
+our $re_unit_signature = qr(^\s*Signature:\s+([0-9a-f]+)\s*$);
+
+our $re_type_offset = qr(^\s*Type Offset:\s+(?:0x)?([0-9a-f]+)\s*$);
 
 #########################################################################
 
@@ -267,6 +308,12 @@ contain the compilation directory as string.
 
 recognises the const value tag of an item.  C<$1> will contain the value.
 
+=item I<@re_containing_type>
+
+recognises the containing type tag of an item.  Either C<$1> will
+contain the normal internal item ID or C<S2> will contain the Dwarf-4
+signature of the containing type.
+
 =item I<@re_decl_file>
 
 recognises the declaration file tag of an item.  C<$1> will contain
@@ -297,6 +344,11 @@ recognises the external tag of an item.  C<$1> will usually contain a
 recognises the language tag of an item.  C<$1> will contain the
 language as text.
 
+=item I<@re_linkage_name_tag>
+
+recognises the linkage name tag of an item.  C<$1> will contain the
+name.
+
 =item I<@re_location>
 
 recognises the data member location tag of an item.  C<$1> will
@@ -316,6 +368,12 @@ recognises the name tag of an item.  C<$1> will contain the name.
 recognises the producer tag of an item.  C<$1> will contain the
 producer as string.
 
+=item I<@re_signature_tag>
+
+recognises the signature tag of an item.  C<$1> will contain the
+leading C<<0x> in case of a signature refering to the same compilation
+unit, C<$2> will contain the hexadecimal signature.
+
 =item I<@re_specification>
 
 recognises the specification tag of an item.  C<$1> will contain the
@@ -323,8 +381,9 @@ internal item ID of the specification.
 
 =item I<@re_type>
 
-recognises the type tag of an item.  C<$1> will contain the internal
-item ID of the type.
+recognises the type tag of an item.  Either C<$1> will contain the
+normal internal item ID or C<S2> will contain the Dwarf-4 signature of
+the type.
 
 =item I<@re_upper_bound>
 
@@ -361,88 +420,167 @@ currently ignored.
 
 our @re_item_start =
     ( undef, undef,
+      qr'^\s*<(\d+)><([0-9A-F]+)>:\s+abbrev\s+number:\s+(\d+)\s+\((.*)\)'i,
+      undef,
       qr'^\s*<(\d+)><([0-9A-F]+)>:\s+abbrev\s+number:\s+(\d+)\s+\((.*)\)'i
     );
 
 our @re_abstract_origin =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_abstract_origin\s*:\s+<(?:0x)?([0-9A-F]+)>)i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_abstract_origin\s*:\s+<(?:0x)?([0-9A-F]+)>)i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_abstract_origin\s*:\s+<(?:0x)?([0-9A-F]+)>)i
+    );
 
 our @re_bit_offset =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_bit_offset\s*:\s+(\d+))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_bit_offset\s*:\s+(\d+))i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_bit_offset\s*:\s+(\d+))i
+    );
 
 our @re_bit_size =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_bit_size\s*:\s+(\d+))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_bit_size\s*:\s+(\d+))i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_bit_size\s*:\s+(\d+))i
+    );
 
 our @re_byte_size =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_byte_size\s*:\s+(\d+))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_byte_size\s*:\s+(\d+))i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_byte_size\s*:\s+(\d+))i
+    );
 
 our @re_comp_dir =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_comp_dir\s*:(?:.+:)?\s+(.+))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_comp_dir\s*:(?:.+:)?\s+(.+))i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_comp_dir\s*:(?:.+:)?\s+(.+))i
+    );
 
 our @re_const_value =
     ( undef, undef,
-      qr{^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_const_value\s*:\s+([-\d]+|\*|ALL|\(indirect string, .*)}i );
+      qr{^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_const_value\s*:\s+([-\d]+|\*|ALL|\(indirect string, .*|\w{1,4})}i,
+      undef,
+      qr{^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_const_value\s*:\s+([-\d]+|\*|ALL|\(indirect string, .*|\w{1,4})}i
+    );
+
+our @re_containing_type =
+    ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_containing_type\s*:\s+<(?:0x)?([0-9A-F]+)>)i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_containing_type\s*:\s+(?:<(?:0x)?([0-9A-F]+)>|signature\s*:\s+([0-9A-F]+)))i
+    );
 
 our @re_decl_file =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_decl_file\s*:\s+(\d+))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_decl_file\s*:\s+(\d+))i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_decl_file\s*:\s+(\d+))i
+    );
 
 our @re_decl_line =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_decl_line\s*:\s+(\d+))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_decl_line\s*:\s+(\d+))i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_decl_line\s*:\s+(\d+))i
+    );
 
 our @re_declaration =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_declaration\s*:\s+(\d+))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_declaration\s*:\s+(\d+))i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_declaration\s*:\s+(\d+))i
+    );
 
 our @re_encoding =
     ( undef, undef,
-      qr'^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_encoding\s*:\s+\d+\s+\(([a-z ]+)\)'i );
+      qr'^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_encoding\s*:\s+\d+\s+\(([a-z ]+)\)'i,
+      undef,
+      qr'^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_encoding\s*:\s+\d+\s+\(([a-z ]+)\)'i
+    );
 
 our @re_external =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_external\s*:\s+(\d+))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_external\s*:\s+(\d+))i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_external\s*:\s+(\d+))i
+    );
 
 our @re_language =
     ( undef, undef,
-      qr'^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_language\s*:\s+\d+\s+\((.+)\)'i );
+      qr'^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_language\s*:\s+\d+\s+\((.+)\)'i,
+      undef,
+      qr'^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_language\s*:\s+\d+\s+\((.+)\)'i
+    );
+
+our @re_linkage_name_tag =
+    ( undef, undef,
+      undef,			# new in Dwarf-4?
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_linkage_name\b.*:\s+(.*[\w>]))i
+    );
 
 our @re_location =
     ( undef, undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_location\s*:\s*\d+ byte block:\s+([[:xdigit:]]{1,2}(?: [[:xdigit:]]{1,2})*)\s+\W)i,
+      undef,
       qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_location\s*:\s*\d+ byte block:\s+([[:xdigit:]]{1,2}(?: [[:xdigit:]]{1,2})*)\s+\W)i
     );
 
 our @re_member_location =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_data_member_location:.*DW_OP_plus_uconst:\s+(\d+))i
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_data_member_location:.*DW_OP_(?:plus_uconst|const1u):\s+(\d+))i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_data_member_location:\s+(\d+))i
     );
 
 our @re_name_tag =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_name\s*.*:\s+(.*[\w>]))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_name\b.*:\s+(.*[\w>]))i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_name\b.*:\s+(.*[\w>]))i
+    );
 
 our @re_producer =
     ( undef, undef,
-      qr'^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_producer\s*:(?:\s+\(.+\):)?\s+(.+)'i );
+      qr'^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_producer\s*:(?:\s+\(.+\):)?\s+(.+)'i,
+      undef,
+      qr'^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_producer\s*:(?:\s+\(.+\):)?\s+(.+)'i
+    );
+
+our @re_signature_tag =
+    ( undef, undef,
+      undef,			# new in Dwarf-4?
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_signature\b.*:\s+(<0x)?([0-9A-F]+)>?)i
+    );
 
 our @re_specification =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_specification\s*:\s+<(?:0x)?([0-9A-F]+)>)i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_specification\s*:\s+<(?:0x)?([0-9A-F]+)>)i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_specification\s*:\s+<(?:0x)?([0-9A-F]+)>)i
+    );
 
 our @re_type =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_type\s*:\s+<(?:0x)?([0-9A-F]+)>)i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_type\s*:\s+<(?:0x)?([0-9A-F]+)>)i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_type\s*:\s+(?:<(?:0x)?([0-9A-F]+)>|signature\s*:\s+([0-9A-F]+)))i
+    );
 
 our @re_upper_bound =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_upper_bound\s*:\s+(\d+))i );
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_upper_bound\s*:\s+(\d+))i,
+      undef,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_upper_bound\s*:\s+(\d+))i
+    );
 
-use constant IGNORED_ATTRIBUTES => qw(accessibility
+use constant IGNORED_ATTRIBUTES => qw(GNU_macros
+				      accessibility
 				      artificial
 				      encoding
 				      entry_pc
@@ -453,9 +591,14 @@ use constant IGNORED_ATTRIBUTES => qw(accessibility
 				      producer
 				      ranges
 				      sibling
-				      stmt_list);
+				      stmt_list
+				      virtuality);
 our @re_ignored_attributes =
     ( undef, undef,
+      '^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_(?:(?:'.
+      join('|', IGNORED_ATTRIBUTES).
+      ')\b|location\s*:\s*0x)',
+      undef,
       '^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_(?:(?:'.
       join('|', IGNORED_ATTRIBUTES).
       ')\b|location\s*:\s*0x)'
@@ -474,13 +617,41 @@ our @tag_needs_attributes =
       DW_TAG_compile_unit => [ qw(name) ],
       DW_TAG_enumerator => [ qw(name) ],
       DW_TAG_enumeration_type => [ qw(byte_size) ],
-      DW_TAG_formal_parameter => [ qw(name type) ],
+      DW_TAG_formal_parameter => [ qw(type) ],
+      DW_TAG_inheritance => [qw(type member_location)],
       DW_TAG_member => [ qw(name type member_location) ],
       DW_TAG_pointer_type => [ qw(byte_size) ],
       DW_TAG_ptr_to_member_type => [ qw(containing_type) ],
       DW_TAG_reference_type => [ qw(type byte_size) ],
       DW_TAG_structure_type => [],
       DW_TAG_subrange_type => [ qw(upper_bound) ],
+      DW_TAG_template_type_param => [ qw(name byte_size) ],
+      DW_TAG_template_value_param => [ qw(name type) ],
+      DW_TAG_typedef => [ qw(name type) ],
+      DW_TAG_union_type => [ qw(byte_size) ],
+      DW_TAG_variable => [ qw(name type) ],
+      DW_TAG_volatile_type => [ qw(type) ]
+     },
+      undef,
+     {
+      # Note that in combination with a C typedef the name is often missing!
+      DW_TAG_array_type => [ qw(type) ],
+      DW_TAG_base_type => [ qw(name) ],
+      DW_TAG_class_type => [],
+      DW_TAG_const_type => [ qw(type) ],
+      DW_TAG_compile_unit => [ qw(name) ],
+      DW_TAG_enumerator => [ qw(name) ],
+      DW_TAG_enumeration_type => [ qw(byte_size) ],
+      DW_TAG_formal_parameter => [ qw(type) ],
+      DW_TAG_inheritance => [qw(type member_location)],
+      DW_TAG_member => [ qw(name type member_location) ],
+      DW_TAG_pointer_type => [ qw(byte_size) ],
+      DW_TAG_ptr_to_member_type => [ qw(containing_type) ],
+      DW_TAG_reference_type => [ qw(type byte_size) ],
+      DW_TAG_structure_type => [],
+      DW_TAG_subrange_type => [ qw(upper_bound) ],
+      DW_TAG_template_type_param => [ qw(name byte_size) ],
+      DW_TAG_template_value_param => [ qw(name type) ],
       DW_TAG_typedef => [ qw(name type) ],
       DW_TAG_union_type => [ qw(byte_size) ],
       DW_TAG_variable => [ qw(name type) ],
@@ -494,6 +665,26 @@ our @ignored_tags =
      undef,
      [
       qw(
+	DW_TAG_GNU_call_site
+	DW_TAG_GNU_call_site_parameter
+	DW_TAG_inlined_subroutine
+	DW_TAG_imported_declaration
+	DW_TAG_imported_module
+	DW_TAG_label
+	DW_TAG_lexical_block
+	DW_TAG_namespace
+	DW_TAG_subprogram
+	DW_TAG_subroutine_type
+	DW_TAG_unspecified_parameters
+      ),
+      'Unknown TAG value: 4109',
+      'Unknown TAG value: 410a'
+     ],
+      undef,
+     [
+      qw(
+	DW_TAG_GNU_call_site
+	DW_TAG_GNU_call_site_parameter
 	DW_TAG_inlined_subroutine
 	DW_TAG_imported_declaration
 	DW_TAG_imported_module
@@ -503,10 +694,21 @@ our @ignored_tags =
 	DW_TAG_namespace
 	DW_TAG_subprogram
 	DW_TAG_subroutine_type
+	DW_TAG_type_unit
 	DW_TAG_unspecified_parameters
-      )
+      ),
+      'Unknown TAG value: 4109',
+      'Unknown TAG value: 410a'
      ]
     );
+
+# list of attributes holding readelf hexadecimal IDs that must be
+# remapped in Dwarf-4 compilation units with signatures:
+use constant ID_ATTRIBUTES => qw(sibling specification type);
+
+# list of attributes that may hold a signature instead of an ID in
+# Dwarf-4:
+use constant SIGNATURE_ATTRIBUTES => qw(signature type);
 
 #########################################################################
 
@@ -525,7 +727,7 @@ our @ignored_tags =
 =head3 parameters:
 
     $file_name          name of executable or object file
-    $line_info          a L<Parse::Readelf::Debug::Line> object 
+    $line_info          a L<Parse::Readelf::Debug::Line> object
 
 =head3 description:
 
@@ -587,12 +789,16 @@ sub new($$;$)
 
     # parse section:
     my $version = -1;
+    my $unit_offset = 0;
+    my $signature = '';
+    my $type_offset = '';
     my @level_stack = (undef);
     my $item = undef;
     my $needed_attributes = undef;
     my %is_ignored = ();
     my $tag_needs_attributes = undef;
     my $compilation_unit = -1;
+    my %compilation_unit_list = ();
     while (<READELF>)
     {
 	if (m/$re_dwarf_version/)
@@ -604,11 +810,27 @@ sub new($$;$)
 	    %is_ignored = map { $_ => 1 } @{$ignored_tags[$version]};
 	    $tag_needs_attributes = $tag_needs_attributes[$version];
 	    $compilation_unit++;
+	    $signature = $type_offset = '';
+	}
+	elsif (m/$re_unit_offset/)
+	{
+	    $unit_offset = hex($1);
+	}
+	elsif (m/$re_unit_signature/)
+	{
+	    $signature = $1;
+	}
+	elsif (m/$re_type_offset/)
+	{
+	    $signature
+		or  confess 'internal error: type offset without previous ',
+		    'signature at input line ', $., ' in ', __PACKAGE__;
+	    $type_offset = sprintf("%x", $unit_offset + hex($1));
 	}
 	next unless $version >= 0;
 
 	# stop at end of section:
-	if (m/$re_section_stop/)
+	if (m/$re_section_stop/  and  not m/$re_section_start/)
 	{
 	    my $dummy = grep /nothing/, <READELF>; # avoid SIGPIPE in close
 	    last;
@@ -620,11 +842,33 @@ sub new($$;$)
 	    # check if item is complete and store it:
 	    if (defined $item)
 	    {
+		# fix IDs in compilation units with signature:
+		if ($signature)
+		{
+		    foreach (ID_ATTRIBUTES)
+		    {
+			$item->{$_} = $compilation_unit.'_'.$item->{$_}
+			    if  defined $item->{$_}  and  $item->{$_} !~ m/^S/;
+		    }
+		    # TODO: remove when Dwarf-4 is no longer experimental:
+		    foreach (keys %$item)
+		    {
+			confess 'internal error: attribute ', $_,
+			    ' needs remapping in compilation unit ',
+				'(add to ID_ATTRIBUTES in ', __PACKAGE__, ')'
+				    if m/^[0-9a-f]{1,7}$/;
+		    }
+		    if ($item->{id} eq $compilation_unit.'_'.$type_offset)
+		    {
+			$compilation_unit_list{$signature} = $item->{id};
+		    }
+		}
 		# special handling of indirect variables of
 		# non-optimised inline functions:
 		if (defined $item->{abstract_origin}  and
 		    (defined $item->{type_tag} eq 'DW_TAG_variable'  ))
 		{
+		    # TODO: This needs a test case!
 		    warn "abstract variable";
 		    $item = undef;
 		    next;
@@ -645,7 +889,7 @@ sub new($$;$)
 			$self{item_map}->{$item->{type}}->{member_location} =
 			    $item->{member_location};
 		    }
-#TODO: activate check again later:
+#TODO: activate check again later or in case of problems (missing info):
 #		     carp('necessary attribute tag ', $_, ' is missing in ',
 #			  $item->{type_tag},
 #			  (defined $item->{name} ? ' for '.$item->{name} : ''),
@@ -668,6 +912,16 @@ sub new($$;$)
 			    if $item->{level} > 1;
 		    pop @level_stack while ($#level_stack >= $item->{level});
 		    $level_stack[$item->{level}] = $item;
+		    # inheritance entries (almost) never have file/line:
+		    if ($item->{type_tag} eq 'DW_TAG_inheritance'  and
+			not defined $item->{decl_file}  and
+		       defined $level_stack[$item->{level} - 1]->{decl_file})
+		    {
+			$item->{decl_file} =
+			    $level_stack[$item->{level} - 1]->{decl_file};
+			$item->{decl_line} =
+			    $level_stack[$item->{level} - 1]->{decl_line};
+		    }
 		}
 		# Take special care of structure names that are stored
 		# in another node:
@@ -702,8 +956,8 @@ sub new($$;$)
 		    }
 		}
 		# for items with known location add object id:
-		$item->{compilation_unit} = $compilation_unit
-		    if defined $item->{decl_file};
+		if (defined $item->{decl_file})
+		{ $item->{compilation_unit} = $compilation_unit }
 		# brush up stored item with a few item tag specific fixes:
 		$item->{name} = 'void'
 		    if ($item->{type_tag} eq 'DW_TAG_pointer_type'  and
@@ -715,7 +969,10 @@ sub new($$;$)
 	    # except for the carp below as the ID uses a new sequence
 	    # for every compilation unit and is therefore pretty much
 	    # worthless for us):
-	    $item = { level => $1, id => $2, type_tag => $4, sub_items => [] };
+	    $item = { level => $1,
+		      id => $signature ? $compilation_unit.'_'.$2 : $2,
+		      type_tag => $4,
+		      sub_items => [] };
 	    if (defined $tag_needs_attributes->{$4})
 	    {
 		$needed_attributes = $tag_needs_attributes->{$4};
@@ -727,7 +984,7 @@ sub new($$;$)
 	    }
 	    else
 	    {
-		carp 'unknow item type ', $4, ' (', $3,
+		carp 'unknown item type ', $4, ' (', $3,
 		    ') found at position ', $2;
 		$item = undef;
 	    }
@@ -746,6 +1003,8 @@ sub new($$;$)
 	{ $item->{comp_dir} = $1 }
 	elsif (m/$re_const_value[$version]/)
 	{ $item->{const_value} = $1 }
+	elsif (m/$re_containing_type[$version]/)
+	{ $item->{containing_type} = defined $2 ? 'S'.$2 : $1 }
 	elsif (m/$re_decl_file[$version]/)
 	{ $item->{decl_file} = $1 }
 	elsif (m/$re_decl_line[$version]/)
@@ -758,6 +1017,9 @@ sub new($$;$)
 	{ $item->{external} = $1 }
 	elsif (m/$re_language[$version]/)
 	{ $item->{language} = $1 }
+	elsif (defined $re_linkage_name_tag[$version]  and
+	       m/$re_linkage_name_tag[$version]/)
+	{ $item->{linkage_name} = $1 }
 	elsif (m/$re_location[$version]/)
 	{ $item->{location} = $1 }
 	elsif (m/$re_member_location[$version]/)
@@ -766,10 +1028,13 @@ sub new($$;$)
 	{ $item->{name} = $1 }
 	elsif (m/$re_producer[$version]/)
 	{ $item->{producer} = $1 }
+	elsif (defined $re_signature_tag[$version]  and
+	       m/$re_signature_tag[$version]/)
+	{ $item->{signature} = defined $1 ? $2 : 'S'.$2 }
 	elsif (m/$re_specification[$version]/)
 	{ $item->{specification} = $1 }
 	elsif (m/$re_type[$version]/)
-	{ $item->{type} = $1 }
+	{ $item->{type} = defined $2 ? 'S'.$2 : $1 }
 	elsif (m/$re_upper_bound[$version]/)
 	{ $item->{upper_bound} = $1 }
 	elsif (m/$re_ignored_attributes[$version]/i)
@@ -779,6 +1044,16 @@ sub new($$;$)
 	    chomp;
 	    carp('unknown attribute type ', $1, ' found at position ',
 		 $item->{id}, ' : ', $_);
+	}
+    }
+
+    # remap S<signature>s:
+    foreach $item (values %{$self{item_map}})
+    {
+	foreach (SIGNATURE_ATTRIBUTES)
+	{
+	    if (defined $item->{$_}  and  $item->{$_} =~ m/^S([0-9A-F]+)/i)
+	    { $item->{$_} = $compilation_unit_list{$1}; }
 	}
     }
 
@@ -935,7 +1210,10 @@ sub item_ids_matching($$;$)
     (object ID of module and source number) are needed to get the file
     name from
     L<Parse::Readelf::Debug::Line::file|Parse::Readelf::Debug::Line/file>.
-    The third is the line number within the source.
+    The third is the line number within the source.  If in Dwarf 4 the
+    last two elements are not provided, they will be replaced by the
+    fixed string C<signature> and the signature ID of the compilation
+    unit instead.
 
     Note that named indices for the result are defined in the
     L</":constants"> export (see above).
@@ -956,7 +1234,7 @@ sub structure_layout($$;$)
 
     my $item = $this->{item_map}->{$id};
     # ignore undefined items or standard items (as standard data types):
-    return () unless defined $item and defined $item->{decl_file};
+    return () unless defined $item  and  defined $item->{decl_file};
 
     # handle relative level - 1:
     if (defined $this->{sl_level})
@@ -1108,9 +1386,13 @@ sub structure_layout($$;$)
 	if ($name =~ m/\[(\d+)\]$/ and $1 > 0)
 	{ $size *= $1 }
 
-	# for structured items continue recursion:
+	# for structured items continue recursion (but ignore
+	# declarations not declaring real members!):
 	foreach (@{$item->{sub_items}})
-	{ push @sub_layout, $this->structure_layout($_->{id}, $offset) }
+	{
+	    push @sub_layout, $this->structure_layout($_->{id}, $offset)
+		unless $_->{type_tag} eq 'DW_TAG_typedef';
+	}
 
 	# sort sub-structure:
 	if (@sub_layout)
@@ -1181,8 +1463,11 @@ the referenced data is shown, not the internal size of the reference
 self.  This is a feature.  (Note that this means that pointers to
 functions outside of structures always have the size 0.)
 
-Only Dwarf version 2 is supported.  Please contact the author for
-other versions and provide some example C<readelf> outputs.
+Only Dwarf versions 2 and 4 are currently supported.  Please contact
+the author for other versions and provide some example C<readelf>
+outputs.  Without examples support of other versions will not be
+possible.  Note that the support of Dwarf version 4 is still
+experimental.
 
 This has only be tested in a Unix like environment, namely Linux and
 Solaris.
@@ -1198,7 +1483,7 @@ Thomas Dorner, E<lt>dorner (AT) cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007-2012 by Thomas Dorner
+Copyright (C) 2007-2013 by Thomas Dorner
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.6.1 or,

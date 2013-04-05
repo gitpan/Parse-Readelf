@@ -50,17 +50,27 @@ my $prdi_cmd = $Parse::Readelf::Debug::Info::command;
 	     '^TBitMatrix<',
 	     '^TFixString<',
 	     # ignore some standard structures when expanding substructures:
-	     '^basic_string');
+	     '^basic_string',
+	     '^shared_ptr<std::',
+	     '^string$');
 }
 
 # loop over objects:
 foreach my $object (@ARGV)
 {
+    my $tmpfile = undef;
     # handle preextracted lists:
     if ($object eq '-'  or  $object =~ m/\.lst$/)
     {
 	$Parse::Readelf::Debug::Line::command = 'cat';
 	$Parse::Readelf::Debug::Info::command = 'cat';
+	if ($object eq '-')
+	{
+	    require File::Temp;
+	    $tmpfile = File::Temp->new(SUFFIX => '.lst');
+	    $object = $tmpfile->filename;
+	    print $tmpfile $_ while <STDIN>;
+	}
     }
     else
     {
@@ -70,5 +80,6 @@ foreach my $object (@ARGV)
 
     # parse object and print structure layout for matching identifiers:
     my $readelf_data = new Parse::Readelf($object);
+$Parse::Readelf::Debug::Info::display_nested_items = 1;
     $readelf_data->print_structure_layout($re_identifier, 1);
 }

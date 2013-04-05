@@ -239,7 +239,7 @@ is($line_info->file($id, 135), 'istream.tcc',
    "file($id, 135) is 'istream.tcc'");
 is($line_info->file($id, 136), '<built-in>', "file($id, 136) is '<built-in>'");
 is($line_info->file($id, 137), '', "file($id, 137) is empty");
-is($line_info->file(4, 1), '', "file(5, 1) is empty");
+is($line_info->file(4, 1), '', "file(4, 1) is empty");
 is($line_info->directory($id, 0), '', "directory($id, 0) is empty");
 is($line_info->directory($id, 1), '.', "directory($id, 1) is '.'");
 is($line_info->directory($id, 2),

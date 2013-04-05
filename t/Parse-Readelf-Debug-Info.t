@@ -10,7 +10,7 @@
 
 use strict;
 
-use Test::More tests => 135;
+use Test::More tests => 150;
 
 use File::Spec;
 
@@ -79,7 +79,7 @@ eval { import Parse::Readelf::Debug::Info ':fixed_regexps' };
 is($@, '', "import with ':fixed_regexps'");
 test_globals(':fixed_regexps',
 	     {'$command' => undef,
-	      '$re_section_start' => qr(^The section \.debug_info contains:|^Contents of the \.debug_info section:),
+	      '$re_section_start' => qr(^The section \.debug_info contains:|^Contents of the \.debug_\(?:info|types\) section:),
 	      '$re_section_stop'  => qr(^The section \.debug_.* contains:|^Contents of the \.debug_.* section:),
 	      '$re_dwarf_version' => qr(^\s*Version:\s+(\d+)\s*$)}
 	    );
@@ -97,7 +97,7 @@ eval { import Parse::Readelf::Debug::Info ':all' };
 is($@, '', "import with ':all'");
 test_globals(':all',
 	     {'$command' => 'readelf --debug-dump=info',
-	      '$re_section_start' => qr(^The section \.debug_info contains:|^Contents of the \.debug_info section:),
+	      '$re_section_start' => qr(^The section \.debug_info contains:|^Contents of the \.debug_\(?:info|types\) section:),
 	      '$re_section_stop'  => qr(^The section \.debug_.* contains:|^Contents of the \.debug_.* section:),
 	      '$re_dwarf_version' => qr(^\s*Version:\s+(\d+)\s*$)}
 	    );
@@ -126,7 +126,7 @@ $Parse::Readelf::Debug::Info::command = $^O eq 'MSWin32' ? 'type' : 'cat';
 # failing tests:
 eval { my $x = Parse::Readelf::Debug::Info::new() };
 like($@,
-     qr/^bad call to new of Parse::Readelf::Debug::Info $re_msg_tail/,
+     qr|^bad call to new of Parse::Readelf::Debug::Info $re_msg_tail|,
      'bad creation fails');
 eval {
     my $filepath = File::Spec->catfile($path, 'data', 'xxx.xxx');
@@ -193,12 +193,14 @@ my $filepath = undef;
 my $debug_info = undef;
 
 # arrays with results depending on input file:
-my @ids_matching__l_   = (6,   6,   7,   8,  11,  12);
-my @ids_matching__l_o2 = (2,   2,   2,   2,   4,   4);
-my @ids_matching_l_    = (6,  14,  15,  15,  18,  19);
-my @ids_matching_var   = (7, 122, 128, 119, 124, 122);
+my @ids_matching__l_   = (6,   6,   7,   8,  11,  12, 12);
+my @ids_matching__l_o2 = (2,   2,   2,   2,   4,   4,  4);
+my @ids_matching_l_    = (6,  14,  15,  15,  18,  19, 19);
+my @ids_matching_var   = (7, 122, 128, 119, 124, 122, 15);
+my @ids_matching_npos  = (0,   3,   3,   3,   3,   3,  0);
+my @ids_matching_S1    = (0,   1,   1,   1,   1,   1,  2);
 
-foreach my $format (0..5)
+foreach my $format (0..6)	# each should do 15 tests
 {
     $filepath =
 	File::Spec->catfile($path, 'data', 'debug_info_'.$format.'.lst');
@@ -239,7 +241,8 @@ foreach my $format (0..5)
     if ($format > 0)
     {
 	@item_ids = $debug_info->item_ids('npos');
-	is(@item_ids, 3, '3 npos found');
+	is(@item_ids, $ids_matching_npos[$format],
+	   $ids_matching_npos[$format].' npos found');
 
 	my @structure_layout_1 = $debug_info->structure_layout($l_object2a);
 	my @structure_layout_2 = $debug_info->structure_layout($l_object2b);
@@ -249,7 +252,8 @@ foreach my $format (0..5)
 		  'l_object2N similar');
 
 	@item_ids = $debug_info->item_ids('Structure1');
-	is(@item_ids, 1, '1 Structure1 found');
+	is(@item_ids, $ids_matching_S1[$format],
+	   $ids_matching_S1[$format].' Structure1 found');
 	my $structure1 = $item_ids[0];
 
 	@structure_layout_1 = $debug_info->structure_layout($structure1);
@@ -258,8 +262,16 @@ foreach my $format (0..5)
 	    $Parse::Readelf::Debug::Info::display_nested_items = 1;
 	}
 	@structure_layout_2 = $debug_info->structure_layout($structure1);
-	isnt(@structure_layout_1, @structure_layout_2,
-	     'display_nested_items makes a difference');
+	if ($format < 6)
+	{
+	    isnt(@structure_layout_1, @structure_layout_2,
+		 'display_nested_items makes a difference unless Dwarf-4');
+	}
+	else
+	{
+	    is(@structure_layout_1, @structure_layout_2,
+	       'display_nested_items makes no difference in Dwarf-4');
+	}
 	{
 	    no warnings 'once';
 	    $Parse::Readelf::Debug::Info::display_nested_items = 0;
@@ -293,7 +305,7 @@ $SIG{__WARN__} = sub { $stderr .= join('', @_) };
 $debug_info = $debug_info->new($filepath);
 delete $SIG{__WARN__};
 like($stderr,
-     qr/^cloning of a Parse::Readelf::Debug::Info object is not supported $re_msg_tail/,
+     qr|^cloning of a Parse::Readelf::Debug::Info object is not supported $re_msg_tail|,
      'cloning gives a warning');
 is(ref($debug_info), 'Parse::Readelf::Debug::Info',
    'created new Parse::Readelf::Debug::Info object');
@@ -305,9 +317,10 @@ $stderr = '';
 $SIG{__WARN__} = sub { $stderr .= join('', @_) };
 $debug_info = new Parse::Readelf::Debug::Info($filepath);
 delete $SIG{__WARN__};
+
 like($stderr,
-     qr/^unknown attribute type DW_AT_BROKEN found at position .* DW_AT_BROKEN .* $re_msg_tail.*/s,
+     qr|^unknown attribute type DW_AT_BROKEN found at position .* DW_AT_BROKEN .* $re_msg_tail.*|s,
      'broken attribute gives a warning');
 like($stderr,
-     qr/.*unknow item type DW_TAG_BROKEN.* $re_msg_tail/s,
+     qr|.*unknown item type DW_TAG_BROKEN.* $re_msg_tail|s,
      'broken item type gives a warning');

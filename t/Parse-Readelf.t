@@ -10,7 +10,7 @@
 
 use strict;
 
-use Test::More tests => 134;
+use Test::More tests => 141;
 
 use File::Spec;
 use File::Temp 'tempfile';
@@ -196,10 +196,26 @@ check_stdout('^l_',
 	    );
 
 #########################################################################
+# special test for Dwarf-4 (different file lookup):
+$filepath = File::Spec->catfile($path, 'data', 'debug_info_6.lst');
+$readelf_data = new Parse::Readelf($filepath);
+is(ref($readelf_data), 'Parse::Readelf', 'created 2nd Parse::Readelf object');
+
+check_stdout
+    ('l_object2a + loc in Dwarf-4',
+     sub { $readelf_data->print_structure_layout('l_object2a', 1); },
+     qr'^O\s+STRUCTURE\s+TYPE \(SIZE\)\s+SOURCE LOCATION\s*$',
+     qr'^0\s+l_object2a\s+Structure2 \(16\)\s+StructureLayoutTest\.cpp:\d+\s*$',
+     qr'^0\s+Structure2\s+\(16\)\s+StructureLayoutTest\.cpp:\d+\s*$',
+     qr'^0\s+m_00_char\s+char \(1\)\s+StructureLayoutTest\.cpp:\d+\s*$',
+     qr'^8\s+m_01_long_long\s+long long int \(8\)\s+StructureLayoutTest\.cpp:\d+\s*$'
+    );
+
+#########################################################################
 # some more tests for special C features:
 $filepath = File::Spec->catfile($path, 'data', 'debug_info_0.lst');
 $readelf_data = new Parse::Readelf($filepath);
-is(ref($readelf_data), 'Parse::Readelf', 'created 2nd Parse::Readelf object');
+is(ref($readelf_data), 'Parse::Readelf', 'created 3rd Parse::Readelf object');
 
 check_stdout('l_object4',
 	     sub { $readelf_data->print_structure_layout('l_objectAT'); },

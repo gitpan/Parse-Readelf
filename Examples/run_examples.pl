@@ -24,6 +24,7 @@ my %source = (StructureLayoutTest => '.cpp');
 my %output = (StructureLayoutTest =>
 	      ['^sizeof\(Structure1\) == \d{1,2}$',
 	       '^offsetof\(Structure1, m_04_pointer\) == \d{1,2}$',
+	       '^sizeof\(l_pointer1\) == \d{1,2}$',
 	       '^sizeof\(l_object1\) == \d{1,2}$',
 	       '^sizeof\(l_object2a\) == \d{1,2}$',
 	       '^sizeof\(l_object2b\) == \d{1,2}$',
@@ -37,7 +38,8 @@ my %output = (StructureLayoutTest =>
 foreach my $base (keys %source)
 {
  FORMAT:
-    foreach my $format (qw(gdb stabs stabs+ coff xcoff xcoff+ dwarf-2 vms))
+    foreach my $format (qw(gdb stabs stabs+ coff xcoff xcoff+
+			   dwarf-2 dwarf-4 vms))
     {
 	foreach my $level (1..3)
 	{
@@ -45,7 +47,7 @@ foreach my $base (keys %source)
 	    my $object = $base.'-'.$format.'-'.$level.'.o';
 
 	    # compile example source
-	    my $command = 'g++ -W -Wall -g'.$format.' -g'.$level;
+	    my $command = 'g++ -Wall -Wextra -g'.$format.' -g'.$level;
 	    $command .= ' -o'.$object.' -c '.$base.$source{$base};
 	    open GCC, $command.' 2>&1 |'
 		or  die  "$0: can't run '$command': $!\n";
@@ -87,7 +89,7 @@ foreach my $base (keys %source)
 		{
 		    chomp;
 		    print $base, ': "', $_, '" does not match /',
-			$match, "/\n";
+			$match, '/ (', $base, '-', $format, '-', $level, ")\n";
 		    $format_ok = 0;
 		}
 	    }

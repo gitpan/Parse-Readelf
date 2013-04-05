@@ -55,7 +55,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 #########################################################################
 
@@ -374,16 +374,18 @@ sub object_name($$)
 
 =head2 file - get file name of source for a given ID combination
 
-    $file_name = $line_info->file($object_id, $source_number);
+    $file_name = $line_info->file($object_id, $source_number, $relax);
 
 =head3 example:
 
     $file_name = $line_info->file(0, 0);
+    $file_name = $line_info->file(0, 0, 1); # Dwarf-4
 
 =head3 parameters:
 
     $object_id          internal object ID of module
     $source_number      number of the source
+    $relax              optional flag to enable fallback code for object ID
 
 =head3 description:
 
@@ -393,6 +395,11 @@ sub object_name($$)
     the number of the major source file, all others are usually
     include files.  Note that 0 is not used!
 
+    Newer Dwarf versions don't seem to use different tables for
+    different object IDs and put all sources into one table.  The
+    optional flag C<$relax> tells the method to use this one table in
+    those cases.
+
 =head3 returns:
 
     The method returns the source name or an empty string if no
@@ -401,11 +408,15 @@ sub object_name($$)
 =cut
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-sub file($$$)
+sub file($$$;$)
 {
     my $this = shift;
-    my ($id, $source) = @_;
+    my ($id, $source, $relax) = @_;
+    # TODO: compilation unit and ID seem to be totally different
+    # things and I've never seen 2 file name tables in Dwarf-4 so far:
     my $table = $this->{file_names}[$id];
+    if (not defined $table  and  $relax)
+    { $table = $this->{file_names}[0]; }
     return '' unless defined $table and ref($table) eq 'ARRAY';
     my $name = $table->[$source];
     return defined $name ? $name : '';
@@ -688,7 +699,7 @@ Thomas Dorner, E<lt>dorner (AT) cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2007-2011 by Thomas Dorner
+Copyright (C) 2007-2013 by Thomas Dorner
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.6.1 or,
