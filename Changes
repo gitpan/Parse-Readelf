@@ -1,6 +1,9 @@
 Revision history for Perl extension Parse::Readelf.
 
-0.15	(26.12.2012-01.04.2013)
+0.16	(06.04.2013-09.04.2013)
+	Fix for multidimensional arrays
+
+0.15	(26.12.2012-05.04.2013)
 	added support for some more TAGs and attributes
 	fixed missing include directive and added test in example source
 	added first (experimental) support for Dwarf-4

@@ -193,10 +193,10 @@ my $filepath = undef;
 my $debug_info = undef;
 
 # arrays with results depending on input file:
-my @ids_matching__l_   = (6,   6,   7,   8,  11,  12, 12);
+my @ids_matching__l_   = (6,   6,   7,   8,  11,  12, 13);
 my @ids_matching__l_o2 = (2,   2,   2,   2,   4,   4,  4);
-my @ids_matching_l_    = (6,  14,  15,  15,  18,  19, 19);
-my @ids_matching_var   = (7, 122, 128, 119, 124, 122, 15);
+my @ids_matching_l_    = (6,  14,  15,  15,  18,  19, 20);
+my @ids_matching_var   = (7, 122, 128, 119, 124, 122, 16);
 my @ids_matching_npos  = (0,   3,   3,   3,   3,   3,  0);
 my @ids_matching_S1    = (0,   1,   1,   1,   1,   1,  2);
 

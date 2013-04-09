@@ -31,6 +31,7 @@ my %output = (StructureLayoutTest =>
 	       '^sizeof\(l_cObject2b\) == \d{1,2}$',
 	       '^sizeof\(l_object3\) == \d{1,2}$',
 	       '^sizeof\(l_object4\) == \d{1,2}$',
+	       '^sizeof\(l_object5\) == \d{1,2}$',
 	       '^sizeof\(l_cvInt\) == \d{1,2}$',
 	       '^sizeof\(l_objectU\) == \d{1,2}$',
 	       '^sizeof\(l_object2_foo\) == \d{1,2}$',

@@ -58,6 +58,12 @@ struct Structure2
     char            m_00_char;
     long long       m_01_long_long;
 };
+struct Structure5
+{
+    char            m_00_char;
+    short           m_01_short_array_3_4[3][4];
+    long            m_02_long;
+};
 
 class StructureWithUnion
 {
@@ -118,6 +124,7 @@ int main()
     } l_object4;
     volatile const int& l_cvInt = l_object4.m_01_int;
     l_object4.m_string = "Teststring";
+    Structure5 l_object5;
     static StructureWithUnion l_objectU;
     std::cout << "sizeof(Structure1) == "  << sizeof(Structure1)  << "\n"
 	      << "offsetof(Structure1, m_04_pointer) == "
@@ -129,6 +136,7 @@ int main()
 	      << "sizeof(l_cObject2b) == " << sizeof(l_cObject2b) << "\n"
 	      << "sizeof(l_object3) == "   << sizeof(l_object3)   << "\n"
 	      << "sizeof(l_object4) == "   << sizeof(l_object4)   << "\n"
+	      << "sizeof(l_object5) == "   << sizeof(l_object5)   << "\n"
 	      << "sizeof(l_cvInt) == "     << sizeof(l_cvInt)     << "\n"
 	      << "sizeof(l_objectU) == "   << sizeof(l_objectU)   << "\n";
     ClassWithInline l_objectI;

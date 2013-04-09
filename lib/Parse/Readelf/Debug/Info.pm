@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 
 use Parse::Readelf::Debug::Line;
 
@@ -532,7 +532,7 @@ our @re_location =
 
 our @re_member_location =
     ( undef, undef,
-      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_data_member_location:.*DW_OP_(?:plus_uconst|const1u):\s+(\d+))i,
+      qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_data_member_location:.*DW_OP_(?:(?:plus_uconst|const1u):\s+(\d+))?)i,
       undef,
       qr(^\s*(?:<[0-9A-F ]+>)?\s*DW_AT_data_member_location:\s+(\d+))i
     );
@@ -1023,7 +1023,7 @@ sub new($$;$)
 	elsif (m/$re_location[$version]/)
 	{ $item->{location} = $1 }
 	elsif (m/$re_member_location[$version]/)
-	{ $item->{member_location} = $1 }
+	{ $item->{member_location} = $1 if defined $1; }
 	elsif (m/$re_name_tag[$version]/)
 	{ $item->{name} = $1 }
 	elsif (m/$re_producer[$version]/)
@@ -1333,10 +1333,13 @@ sub structure_layout($$;$)
 		# arrays:
 		elsif ($type->{type_tag} eq 'DW_TAG_array_type')
 		{
-		    $name .= '[';
-		    $name .= $type->{sub_items}->[0]->{upper_bound} + 1
-			if defined $type->{sub_items}->[0]->{upper_bound};
-		    $name .= ']';
+		    foreach (0..$#{$type->{sub_items}})
+		    {
+			$name .= '[';
+			$name .= $type->{sub_items}->[$_]->{upper_bound} + 1
+			    if defined $type->{sub_items}->[$_]->{upper_bound};
+			$name .= ']';
+		    }
 		    $type = $this->{item_map}->{$type->{type}};
 		    next;
 		}
@@ -1383,7 +1386,7 @@ sub structure_layout($$;$)
 	}
 
 	# handle size - 4:
-	if ($name =~ m/\[(\d+)\]$/ and $1 > 0)
+	while ($name =~ m/\[(\d+)\]/g  and  $1 > 0)
 	{ $size *= $1 }
 
 	# for structured items continue recursion (but ignore
