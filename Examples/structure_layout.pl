@@ -6,7 +6,7 @@
 # information in files ending with ".lst").
 #
 # Author: Thomas Dorner
-# Copyright: (C) 2007-2012 by Thomas Dorner (Artistic License)
+# Copyright: (C) 2007-2013 by Thomas Dorner (Artistic License)
 
 use strict;
 use warnings;

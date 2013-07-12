@@ -49,7 +49,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 use Parse::Readelf::Debug::Line;
 
@@ -1402,14 +1402,17 @@ sub structure_layout($$;$)
 	{
 	    @sub_layout =
 		sort {
-		    $a->[$OFFSET] <=> $b->[$OFFSET]
-			||
-			    (defined $a->[$BITOFFSET]
-			     ? (defined $b->[$BITOFFSET]
-				? $a->[$BITOFFSET] <=> $b->[$BITOFFSET] : 1)
-			     : (defined $b->[$BITOFFSET] ? -1 : 0)
-			    )
-			}
+		    ($a->[$OFFSET] <=> $b->[$OFFSET]
+		     ||
+		     (defined $a->[$BITOFFSET]
+		      ? (defined $b->[$BITOFFSET]
+			 ? $a->[$BITOFFSET] <=> $b->[$BITOFFSET] : 1)
+		      : (defined $b->[$BITOFFSET] ? -1 : 0)
+		     )
+		     ||
+		     $a->[$LEVEL] <=> $b->[$LEVEL]
+		    )
+		}
 		    @sub_layout;
 	}
 

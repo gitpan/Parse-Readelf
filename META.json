@@ -31,15 +31,15 @@
    "provides" : {
       "Parse::Readelf" : {
          "file" : "lib/Parse/Readelf.pm",
-         "version" : "0.16"
+         "version" : "0.17"
       },
       "Parse::Readelf::Debug::Info" : {
          "file" : "lib/Parse/Readelf/Debug/Info.pm",
-         "version" : "0.16"
+         "version" : "0.17"
       },
       "Parse::Readelf::Debug::Line" : {
          "file" : "lib/Parse/Readelf/Debug/Line.pm",
-         "version" : "0.16"
+         "version" : "0.17"
       }
    },
    "release_status" : "stable",
@@ -48,5 +48,5 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.16"
+   "version" : "0.17"
 }

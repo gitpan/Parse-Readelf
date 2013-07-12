@@ -4,7 +4,7 @@
 # compiled from the example sources here.
 #
 # Author: Thomas Dorner
-# Copyright: (C) 2007-2009 by Thomas Dorner (Artistic License)
+# Copyright: (C) 2007-2013 by Thomas Dorner (Artistic License)
 
 use strict;
 use warnings;

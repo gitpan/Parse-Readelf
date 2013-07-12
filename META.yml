@@ -13,13 +13,13 @@ name: Parse-Readelf
 provides:
   Parse::Readelf:
     file: lib/Parse/Readelf.pm
-    version: 0.16
+    version: 0.17
   Parse::Readelf::Debug::Info:
     file: lib/Parse/Readelf/Debug/Info.pm
-    version: 0.16
+    version: 0.17
   Parse::Readelf::Debug::Line:
     file: lib/Parse/Readelf/Debug/Line.pm
-    version: 0.16
+    version: 0.17
 recommends:
   File::Temp: 0
   Test::Pod: 0
@@ -31,4 +31,4 @@ requires:
   perl: v5.6.1
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.16
+version: 0.17

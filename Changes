@@ -1,5 +1,8 @@
 Revision history for Perl extension Parse::Readelf.
 
+0.17	(12.07.2013)
+	fix for bad sort order when using display_nested_items
+
 0.16	(06.04.2013-09.04.2013)
 	Fix for multidimensional arrays
 

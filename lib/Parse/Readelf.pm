@@ -50,7 +50,7 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 use Parse::Readelf::Debug::Line;
 use Parse::Readelf::Debug::Info ':constants';
